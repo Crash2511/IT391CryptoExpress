@@ -1,3 +1,4 @@
+/* General body and font styles */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -6,33 +7,68 @@ body {
     color: #333;
 }
 
+/* Header styling */
 header {
-    background-color: #333;
+    background-color: #366;
     color: #fff;
     padding: 10px 0;
-    text-align: center;
 }
 
-nav ul {
-    list-style: none;
-    padding: 0;
+nav {
+    display: flex;
+    justify-content: space-between; /* Even spacing between elements */
+    align-items: center;
+    max-width: 1200px; /* Controls the width of the content */
+    margin: 0 auto; /* Centers the nav within the page */
+}
+
+nav h1 {
     margin: 0;
+    padding: 0 20px;
+    font-size: 24px;
 }
 
-nav ul li {
-    display: inline;
+/* Main navigation */
+.main-nav, .nav-right {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-direction: row; /* Ensure items are displayed in a row */
+}
+
+/* Main navigation links */
+.main-nav li {
     margin: 0 15px;
 }
 
-nav ul li a {
+.main-nav li a {
     color: #fff;
     text-decoration: none;
+}
+
+/* Login/Register buttons on the right */
+.nav-right li {
+    margin-left: 15px;
+}
+
+.nav-right a {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.nav-right a:hover {
+    background-color: #218838;
 }
 
 main {
     padding: 20px;
 }
 
+/* Additional styling for content */
 h2 {
     color: #444;
 }
@@ -72,6 +108,7 @@ button {
 button:hover {
     background-color: #218838;
 }
+
 form {
     max-width: 400px;
     margin: 0 auto;
@@ -79,6 +116,14 @@ form {
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+header h1 a {
+    color: #fff; /* or whatever color matches your design */
+    text-decoration: none;
+}
+
+header h1 a:hover {
+    text-decoration: underline;
 }
 
 form label {
@@ -94,18 +139,8 @@ form input[type="text"], form input[type="password"], form select {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
 .content-section {
     display: none; /* Hide all sections initially */
 }
 
-/* Button styling for navigation links */
-nav ul li a {
-    cursor: pointer;
-}
-.btn {
-    display: inline-block;
-    padding: 10px 20px;
-    margin-top: 10px;
-    background-color: #28a745;
-    color: #fff;
-    text-decoration: none
