@@ -23,3 +23,8 @@ crypto = json['data']
 
 for x in crypto:
   print(x['symbol'],x['quote']['USD']['price'])
+
+
+engine = sqlalchemy.create_engine()  #connection between python code and sql server
+crypto.to_sql()#two sql method to push the data to the table
+
