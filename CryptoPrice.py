@@ -1,5 +1,8 @@
-apikey = '0abd643d-332d-4d9d-8ee0-87cd0c97289d'
 import requests
+import pandas
+import sqlalchemy
+apikey = '0abd643d-332d-4d9d-8ee0-87cd0c97289d'
+
 
 headers = {
   'X-CMC_PRO_API_KEY' = apikey.key,
