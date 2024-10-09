@@ -1,5 +1,5 @@
 import requests
-import pandas
+# import pandas might use instead of params
 import sqlalchemy
 apikey = '0abd643d-332d-4d9d-8ee0-87cd0c97289d'
 
