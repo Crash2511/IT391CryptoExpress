@@ -1,0 +1,52 @@
+## Code for the tables in the database.
+
+## crypto information table, for storing everything about the coins.
+
+CREATE TABLE `crypto_information` (
+  `name` varchar(50) NOT NULL,
+  `name_abreviation` varchar(10) NOT NULL,
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `price_change` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `change_percent` decimal(2,2) NOT NULL DEFAULT '0.00',
+  `market_cap` varchar(10) NOT NULL DEFAULT '0',
+  `volume` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `circulating_supply` decimal(20,2) NOT NULL DEFAULT '0.00',
+  `total_supply` decimal(20,2) NOT NULL DEFAULT '0.00',
+  `price_high` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `price_low` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `trade_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+## user information table, for storing  the information about the user.
+
+CREATE TABLE `user_information` (
+  `first_name` varchar(15) DEFAULT NULL,
+  `last_name` varchar(15) DEFAULT NULL,
+  `email` varchar(25) DEFAULT NULL,
+  `user_id` varchar(20) NOT NULL,
+  `user_password` varchar(30) DEFAULT NULL,
+  `account_balance` decimal(15,2) DEFAULT NULL,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `user_information_chk_1` CHECK (((char_length(`user_id`) <= 20) and regexp_like(`user_id`,_utf8mb4'^[a-zA-Z0-9]*$')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+## transaction history table, for looking back at and keeping track of all transactions and their status'
+
+CREATE TABLE `transaction_history` (
+  `transaction_id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(20) NOT NULL,
+  `transaction_type` varchar(20) NOT NULL,
+  `trading_pair` varchar(20) DEFAULT NULL,
+  `amount` decimal(20,8) NOT NULL,
+  `price` decimal(20,8) DEFAULT NULL,
+  `total_value` decimal(20,8) DEFAULT NULL,
+  `fee` decimal(20,8) DEFAULT '0.00000000',
+  `status` varchar(20) DEFAULT 'pending',
+  `timestamp` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `reference_id` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`transaction_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `transaction_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_information` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
