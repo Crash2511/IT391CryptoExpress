@@ -43,7 +43,7 @@ CREATE TABLE `transaction_history` (
   `price` decimal(20,8) DEFAULT NULL,
   `total_value` decimal(20,8) DEFAULT NULL,
   `fee` decimal(20,8) DEFAULT '0.00000000',
-  `status` varchar(20) DEFAULT 'pending',
+  `status` enum('pending','successful','cancelled') DEFAULT 'pending',
   `timestamp` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `reference_id` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`transaction_id`),
