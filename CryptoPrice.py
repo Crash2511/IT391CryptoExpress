@@ -28,4 +28,4 @@ for x in crypto:
 engine = sqlalchemy.create_engine("mysql+pymysql://scott:tiger@localhost/foo")  #connection between python code and sql server
 crypto.to_sql(name='table_name', con=conn, if_exists='replace', index=False) #two sql method to push the data to the table
 
-#engine.close()
+engine.close()
