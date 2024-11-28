@@ -5,34 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Basic styling for tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+        .amount, .price, .value {
+            text-align: right;
+        }
+        .buy-action {
+            background-color: #e6ffe6;
+            color: green;
+        }
+        .sell-action {
+            background-color: #ffe6e6;
+            color: red;
+        }
+        .time-range-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        /* Lighter background for the chart */
+        #portfolio-graph {
+            background-color: #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-	<header>
-		<nav>
-			<h1><a href="index.html">Crypto Express</a></h1>
-			<ul class="main-nav">
-				<li><a href="index.html">Home</a></li>
-				<li><a href="portfolio.html">Portfolio</a></li>
-				<li><a href="market.html">Market</a></li>
-				<li><a href="leaderboard.html">Leaderboard</a></li> 
-				<li><a href="settings.html">Settings</a></li>
-			</ul>
-			<ul class="nav-right">
-				<li><a href="login.html">Login</a></li>
-				<li><a href="register.html">Register</a></li>
-			</ul>
-		</nav>
-	</header>
+    <header>
+        <nav>
+            <h1><a href="index.html">Crypto Express</a></h1>
+            <ul class="main-nav">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="market.html">Market</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+            <ul class="nav-right">
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
+            </ul>
+        </nav>
+    </header>
 
     <main>
         <section id="portfolio">
-            <h2>Your Portfolio</h2>
-            <div id="portfolio-list">
-                <!-- JavaScript will populate this -->
-            </div>
+            <h2>Your Portfolio (Detailed)</h2>
+            <table id="portfolio-table">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th class="amount">Amount</th>
+                        <th class="price">Price</th>
+                        <th class="value">Value</th>
+                    </tr>
+                </thead>
+                <tbody id="portfolio-list">
+                    <!-- JavaScript will populate this -->
+                </tbody>
+            </table>
             <div id="portfolio-summary">
-                <h3>Total Portfolio Value: <span id="total-value">$0</span></h3>
+                <h3>Total Portfolio Value: <span id="total-value" class="value">$0.00</span></h3>
             </div>
+        </section>
+
+        <section id="last-trades">
+            <h2>Last Trades</h2>
+            <table id="trades-table">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Action</th>
+                        <th class="amount">Amount</th>
+                        <th class="price">Price</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="trades-list">
+                    <!-- JavaScript will populate this -->
+                </tbody>
+            </table>
+        </section>
+
+        <section id="portfolio-graph">
+            <h2>Your Portfolio Performance</h2>
+
+            <!-- Dropdown to select cryptocurrency -->
+            <label for="crypto-filter">Select Cryptocurrency:</label>
+            <select id="crypto-filter" onchange="updateCryptoChart()">
+                <option value="all">All</option>
+                <option value="BTC">Bitcoin (BTC)</option>
+                <option value="ETH">Ethereum (ETH)</option>
+                <option value="ADA">Cardano (ADA)</option>
+            </select>
+
+            <div class="time-range-buttons">
+                <button onclick="updateChart('1d')">1D</button>
+                <button onclick="updateChart('1w')">1W</button>
+                <button onclick="updateChart('1m')">1M</button>
+                <button onclick="updateChart('1y')">1Y</button>
+                <button onclick="updateChart('all')">All</button>
+            </div>
+            <canvas id="winsChart" width="300" height="150"></canvas>
         </section>
     </main>
 
@@ -41,45 +132,271 @@
     </footer>
 
     <script>
-        // Mock portfolio data with holdings and current prices
         const portfolioData = [
-            { name: 'Bitcoin', symbol: 'BTC', amount: 0.5, price: 34000 },
-            { name: 'Ethereum', symbol: 'ETH', amount: 10, price: 1900 },
-            { name: 'Cardano', symbol: 'ADA', amount: 1000, price: 0.25 }
+            { name: 'Bitcoin', symbol: 'BTC', amount: 0.5, price: 64000, boughtPrice: 60000 },
+            { name: 'Ethereum', symbol: 'ETH', amount: 10, price: 2400, boughtPrice: 2000 },
+            { name: 'Cardano', symbol: 'ADA', amount: 1000, price: 0.34, boughtPrice: 0.30 }
         ];
 
-        // Function to populate portfolio list and calculate total value
+        const tradeData = [
+            { symbol: 'BTC', amount: 0.1, price: 65000, date: '2024-10-20', action: 'buy' },
+            { symbol: 'ETH', amount: 5, price: 2500, date: '2024-10-18', action: 'sell' },
+            { symbol: 'ADA', amount: 500, price: 0.35, date: '2024-10-15', action: 'buy' }
+        ];
+
+        const portfolioHistory = {
+            BTC: { 
+                '1d': [
+                    { date: '2024-10-20T09:00', value: 32000 }, 
+                    { date: '2024-10-20T12:00', value: 31800 }, 
+                    { date: '2024-10-20T15:00', value: 32500 }, 
+                    { date: '2024-10-20T18:00', value: 32200 }, 
+                    { date: '2024-10-20T21:00', value: 33000 }
+                ],
+                '1w': [
+                    { date: '2024-10-17', value: 31000 }, 
+                    { date: '2024-10-18', value: 31500 }, 
+                    { date: '2024-10-19', value: 32000 }, 
+                    { date: '2024-10-20', value: 32500 }, 
+                    { date: '2024-10-21', value: 33000 }, 
+                    { date: '2024-10-22', value: 32500 }, 
+                    { date: '2024-10-23', value: 34000 }
+                ],
+                '1m': [
+                    { date: '2024-09-23', value: 30000 }, 
+                    { date: '2024-09-30', value: 31000 }, 
+                    { date: '2024-10-07', value: 32000 }, 
+                    { date: '2024-10-14', value: 33000 }, 
+                    { date: '2024-10-21', value: 32500 }
+                ],
+                '1y': [
+                    { date: '2023-11-01', value: 25000 },
+                    { date: '2024-01-01', value: 27000 },
+                    { date: '2024-03-01', value: 30000 },
+                    { date: '2024-06-01', value: 32000 },
+                    { date: '2024-09-01', value: 31000 },
+                    { date: '2024-10-01', value: 33000 }
+                ],
+            },
+            ETH: { 
+                '1d': [
+                    { date: '2024-10-20T09:00', value: 19000 }, 
+                    { date: '2024-10-20T12:00', value: 19200 }, 
+                    { date: '2024-10-20T15:00', value: 18800 }, 
+                    { date: '2024-10-20T18:00', value: 19500 }, 
+                    { date: '2024-10-20T21:00', value: 20000 }
+                ],
+                '1w': [
+                    { date: '2024-10-17', value: 18500 }, 
+                    { date: '2024-10-18', value: 19000 }, 
+                    { date: '2024-10-19', value: 19300 }, 
+                    { date: '2024-10-20', value: 19000 }, 
+                    { date: '2024-10-21', value: 19500 }, 
+                    { date: '2024-10-22', value: 19200 }, 
+                    { date: '2024-10-23', value: 20000 }
+                ],
+                '1m': [
+                    { date: '2024-09-23', value: 18000 }, 
+                    { date: '2024-09-30', value: 18500 }, 
+                    { date: '2024-10-07', value: 19000 }, 
+                    { date: '2024-10-14', value: 19300 }, 
+                    { date: '2024-10-21', value: 19200 }
+                ],
+                '1y': [
+                    { date: '2023-11-01', value: 15000 },
+                    { date: '2024-01-01', value: 17000 },
+                    { date: '2024-03-01', value: 18000 },
+                    { date: '2024-06-01', value: 20000 },
+                    { date: '2024-09-01', value: 19000 },
+                    { date: '2024-10-01', value: 19500 }
+                ],
+            },
+            ADA: { 
+                '1d': [
+                    { date: '2024-10-20T09:00', value: 340 }, 
+                    { date: '2024-10-20T12:00', value: 345 }, 
+                    { date: '2024-10-20T15:00', value: 342 }, 
+                    { date: '2024-10-20T18:00', value: 344 }, 
+                    { date: '2024-10-20T21:00', value: 345 }
+                ],
+                '1w': [
+                    { date: '2024-10-17', value: 330 }, 
+                    { date: '2024-10-18', value: 335 }, 
+                    { date: '2024-10-19', value: 340 }, 
+                    { date: '2024-10-20', value: 342 }, 
+                    { date: '2024-10-21', value: 345 }, 
+                    { date: '2024-10-22', value: 342 }, 
+                    { date: '2024-10-23', value: 345 }
+                ],
+                '1m': [
+                    { date: '2024-09-23', value: 320 }, 
+                    { date: '2024-09-30', value: 330 }, 
+                    { date: '2024-10-07', value: 335 }, 
+                    { date: '2024-10-14', value: 340 }, 
+                    { date: '2024-10-21', value: 342 }
+                ],
+                '1y': [
+                    { date: '2023-11-01', value: 250 },
+                    { date: '2024-01-01', value: 280 },
+                    { date: '2024-03-01', value: 300 },
+                    { date: '2024-06-01', value: 320 },
+                    { date: '2024-09-01', value: 340 },
+                    { date: '2024-10-01', value: 345 }
+                ],
+            },
+            all: { 
+                '1d': [
+                    { date: '2024-10-20T09:00', value: 51340 }, 
+                    { date: '2024-10-20T12:00', value: 52000 }, 
+                    { date: '2024-10-20T15:00', value: 51500 }, 
+                    { date: '2024-10-20T18:00', value: 52500 }, 
+                    { date: '2024-10-20T21:00', value: 54345 }
+                ],
+                '1w': [
+                    { date: '2024-10-17', value: 50000 }, 
+                    { date: '2024-10-18', value: 51000 }, 
+                    { date: '2024-10-19', value: 52000 }, 
+                    { date: '2024-10-20', value: 53000 }, 
+                    { date: '2024-10-21', value: 52850 }, 
+                    { date: '2024-10-22', value: 52000 }, 
+                    { date: '2024-10-23', value: 54345 }
+                ],
+                '1m': [
+                    { date: '2024-09-23', value: 49000 }, 
+                    { date: '2024-09-30', value: 50000 }, 
+                    { date: '2024-10-07', value: 51000 }, 
+                    { date: '2024-10-14', value: 52000 }, 
+                    { date: '2024-10-21', value: 52000 }
+                ],
+                '1y': [
+                    { date: '2023-11-01', value: 42000 },
+                    { date: '2024-01-01', value: 46000 },
+                    { date: '2024-03-01', value: 48000 },
+                    { date: '2024-06-01', value: 50000 },
+                    { date: '2024-09-01', value: 52000 },
+                    { date: '2024-10-01', value: 54345 }
+                ],
+            }
+        };
+
+        let winsChart;
+        let selectedCrypto = 'all';
+
+        function formatDate(dateString) {
+            const options = { month: 'short', day: 'numeric' };
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', options);
+        }
+
         function populatePortfolio() {
             const portfolioList = document.getElementById('portfolio-list');
             const totalValueElement = document.getElementById('total-value');
             let totalValue = 0;
 
-            // Clear any existing data
             portfolioList.innerHTML = '';
 
-            // Populate portfolio list and calculate total value
             portfolioData.forEach(asset => {
                 const assetValue = asset.amount * asset.price;
                 totalValue += assetValue;
 
-                // Add asset to portfolio list
-                const assetItem = document.createElement('div');
-                assetItem.classList.add('portfolio-item');
-                assetItem.innerHTML = `
-                    <h3>${asset.name} (${asset.symbol})</h3>
-                    <p>Amount: ${asset.amount.toLocaleString()}</p>
-                    <p>Price: $${asset.price.toLocaleString()}</p>
-                    <p>Value: $${assetValue.toLocaleString()}</p>
+                const row = `
+                    <tr>
+                        <td>${asset.name} (${asset.symbol})</td>
+                        <td class="amount">${asset.amount.toFixed(2)}</td>
+                        <td class="price">$${asset.price.toFixed(2)}</td>
+                        <td class="value">$${assetValue.toFixed(2)}</td>
+                    </tr>
                 `;
-                portfolioList.appendChild(assetItem);
+                portfolioList.insertAdjacentHTML('beforeend', row);
             });
 
-            // Update total portfolio value
-            totalValueElement.textContent = `$${totalValue.toLocaleString()}`;
+            totalValueElement.textContent = `$${totalValue.toFixed(2)}`;
         }
 
-        // Run populatePortfolio on page load
-        window.onload = populatePortfolio;
+        function populateTrades() {
+            const tradesList = document.getElementById('trades-list');
+            tradesList.innerHTML = '';
+
+            tradeData.forEach(trade => {
+                const actionClass = trade.action === 'buy' ? 'buy-action' : 'sell-action';
+                const row = `
+                    <tr>
+                        <td>${trade.symbol}</td>
+                        <td class="${actionClass}">${trade.action.toUpperCase()}</td>
+                        <td class="amount">${trade.amount.toFixed(2)}</td>
+                        <td class="price">$${trade.price.toFixed(2)}</td>
+                        <td>${formatDate(trade.date)}</td>
+                    </tr>
+                `;
+                tradesList.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function createPortfolioValueChart(timeRange = '1d') {
+            const ctx = document.getElementById('winsChart').getContext('2d');
+            const history = portfolioHistory[selectedCrypto][timeRange];
+            const labels = history.map(entry => formatDate(entry.date));
+            const data = history.map(entry => entry.value);
+
+            if (winsChart) {
+                winsChart.destroy();
+            }
+
+            winsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: selectedCrypto === 'all' ? 'Total Portfolio Value' : `${selectedCrypto} Value Over Time`,
+                        data: data,
+                        backgroundColor: 'rgba(200, 200, 200, 0.7)',
+                        borderWidth: 2,
+                        fill: true,
+                        segment: {
+                            borderColor: ctx => {
+                                const prev = ctx.p0.parsed.y;
+                                const next = ctx.p1.parsed.y;
+                                return next > prev ? 'green' : 'red';
+                            }
+                        },
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Date' },
+                            ticks: { color: '#555' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Value (USD)' },
+                            beginAtZero: false,
+                            ticks: { color: '#555' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#555' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCryptoChart() {
+            selectedCrypto = document.getElementById('crypto-filter').value;
+            createPortfolioValueChart();
+        }
+
+        function updateChart(timeRange) {
+            createPortfolioValueChart(timeRange);
+        }
+
+        window.onload = function() {
+            populatePortfolio();
+            populateTrades();
+            createPortfolioValueChart();
+        };
     </script>
 </body>
 </html>

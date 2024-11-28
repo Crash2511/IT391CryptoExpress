@@ -1,4 +1,4 @@
-/* General body and font styles */
+/* General bod and font styles */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -81,12 +81,52 @@ h2 {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-#crypto-list, #portfolio-list {
+#crypto-list {
     display: flex;
     flex-wrap: wrap;
 }
+/* Index page portfolio - horizontal layout */
+#portfolio-list-index {
+    display: flex;
+    flex-direction: row; /* Horizontal layout */
+    gap: 20px;
+    justify-content: space-around;
+    padding: 20px 0;
+}
 
-.crypto-item, .portfolio-item {
+.portfolio-item {
+    text-align: center;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 30%; /* Adjust width to fit in a row */
+}
+
+/* Portfolio page table */
+#portfolio-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+#portfolio-table th, #portfolio-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+#portfolio-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+#portfolio-list {
+    display: table-row-group; /* or simply remove these styles */
+}
+
+
+.crypto-item {
     flex: 1 1 calc(33.333% - 10px);
     margin: 5px;
     padding: 10px;
@@ -142,5 +182,14 @@ form input[type="text"], form input[type="password"], form select {
 
 .content-section {
     display: none; /* Hide all sections initially */
+}
+/* Add spacing between register and add currency */
+.nav-right {
+    display: flex;
+    gap: 20px; /* Space between login, register, and add currency */
+}
+
+.add-currency-link {
+    margin-left: auto; /* Push the 'Add Currency' button as far right as possible */
 }
 

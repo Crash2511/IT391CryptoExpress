@@ -5,28 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .favorite-btn {
+            padding: 5px 10px;
+            background-color: #f1c40f;
+            border: none;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .favorite-btn.active {
+            background-color: #e67e22;
+        }
+
+        .search-container {
+            margin: 20px 0;
+        }
+
+        #search-input {
+            padding: 10px;
+            width: 80%;
+            margin-right: 10px;
+        }
+
+        #search-btn {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        /* Center-align and format prices */
+        .crypto-item p {
+            text-align: center;
+            font-size: 1em;
+        }
+    </style>
 </head>
 <body>
-	<header>
-		<nav>
-			<h1><a href="index.html">Crypto Express</a></h1>
-			<ul class="main-nav">
-				<li><a href="index.html">Home</a></li>
-				<li><a href="portfolio.html">Portfolio</a></li>
-				<li><a href="market.html">Market</a></li>
-				<li><a href="leaderboard.html">Leaderboard</a></li> 
-				<li><a href="settings.html">Settings</a></li>
-			</ul>
-			<ul class="nav-right">
-				<li><a href="login.html">Login</a></li>
-				<li><a href="register.html">Register</a></li>
-			</ul>
-		</nav>
-	</header>
+    <header>
+        <nav>
+            <h1><a href="index.html">Crypto Express</a></h1>
+            <ul class="main-nav">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="market.html">Market</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+            <ul class="nav-right">
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
+            </ul>
+        </nav>
+    </header>
 
     <main>
         <section id="market-overview">
             <h2>Market Overview</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
+                <button id="search-btn" onclick="searchCrypto()">Search</button>
+            </div>
             <div id="crypto-list">
                 <!-- JavaScript will populate this -->
             </div>
@@ -58,10 +97,30 @@
         const cryptoData = [
             { name: 'Bitcoin', symbol: 'BTC', price: 34000 },
             { name: 'Ethereum', symbol: 'ETH', price: 1900 },
-            { name: 'Binance Coin', symbol: 'BNB', price: 220 },
+            { name: 'Binance Coin', symbol: 'BNB', price: 540 },
             { name: 'Ripple', symbol: 'XRP', price: 0.5 },
             { name: 'Cardano', symbol: 'ADA', price: 0.25 }
         ];
+
+        // Load favorites from local storage
+        const favorites = JSON.parse(localStorage.getItem('favoriteCryptos')) || [];
+
+        // Function to toggle favorite status
+        function toggleFavorite(symbol) {
+            const index = favorites.indexOf(symbol);
+            if (index > -1) {
+                favorites.splice(index, 1); // Remove from favorites
+            } else {
+                favorites.push(symbol); // Add to favorites
+            }
+            localStorage.setItem('favoriteCryptos', JSON.stringify(favorites));
+            populateMarket(); // Re-render the market list
+        }
+
+        // Function to check if a crypto is a favorite
+        function isFavorite(symbol) {
+            return favorites.includes(symbol);
+        }
 
         // Function to populate the crypto dropdown and market overview
         function populateMarket() {
@@ -85,7 +144,45 @@
                 cryptoItem.classList.add('crypto-item');
                 cryptoItem.innerHTML = `
                     <h3>${crypto.name} (${crypto.symbol})</h3>
-                    <p>Price: $${crypto.price.toLocaleString()}</p>
+                    <p>Price: $${crypto.price.toFixed(2)}</p>
+                    <button class="favorite-btn ${isFavorite(crypto.symbol) ? 'active' : ''}" 
+                        onclick="toggleFavorite('${crypto.symbol}')">
+                        ${isFavorite(crypto.symbol) ? 'Unfavorite' : 'Favorite'}
+                    </button>
+                `;
+                cryptoListDiv.appendChild(cryptoItem);
+            });
+        }
+
+        // Function to search for a cryptocurrency
+        function searchCrypto() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const filteredData = cryptoData.filter(crypto =>
+                crypto.name.toLowerCase().includes(searchTerm) || crypto.symbol.toLowerCase().includes(searchTerm)
+            );
+            displaySearchResults(filteredData);
+        }
+
+        // Function to display search results
+        function displaySearchResults(filteredData) {
+            const cryptoListDiv = document.getElementById('crypto-list');
+            cryptoListDiv.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                cryptoListDiv.innerHTML = '<p>No cryptocurrencies found.</p>';
+                return;
+            }
+
+            filteredData.forEach(crypto => {
+                const cryptoItem = document.createElement('div');
+                cryptoItem.classList.add('crypto-item');
+                cryptoItem.innerHTML = `
+                    <h3>${crypto.name} (${crypto.symbol})</h3>
+                    <p>Price: $${crypto.price.toFixed(2)}</p>
+                    <button class="favorite-btn ${isFavorite(crypto.symbol) ? 'active' : ''}" 
+                        onclick="toggleFavorite('${crypto.symbol}')">
+                        ${isFavorite(crypto.symbol) ? 'Unfavorite' : 'Favorite'}
+                    </button>
                 `;
                 cryptoListDiv.appendChild(cryptoItem);
             });
@@ -96,3 +193,4 @@
     </script>
 </body>
 </html>
+

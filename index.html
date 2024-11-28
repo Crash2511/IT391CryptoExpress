@@ -5,25 +5,165 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Simulator</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+
+        .summary-container {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .summary-item {
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            width: 20%;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .summary-item:hover {
+            transform: scale(1.05);
+        }
+
+        #market-overview {
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .crypto-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .crypto-item:hover {
+            background-color: #f1f1f1;
+            transform: scale(1.03);
+        }
+
+        .crypto-item img {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .crypto-item-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .crypto-item-name {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .crypto-item-price {
+            font-size: 1em;
+            color: #007bff;
+        }
+
+        #portfolio-list-index {
+            padding: 20px;
+        }
+
+        .portfolio-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .portfolio-summary-table th, .portfolio-summary-table td {
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .portfolio-summary-table th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .portfolio-summary-table td {
+            background-color: #f9f9f9;
+        }
+
+        #actions {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #333;
+            color: white;
+            margin-top: 40px;
+        }
+    </style>
 </head>
 <body>
-	<header>
-		<nav>
-			<h1>Crypto Express</h1>
-			<ul class="main-nav">
-				<li><a href="index.html">Home</a></li>
-				<li><a href="portfolio.html">Portfolio</a></li>
-				<li><a href="market.html">Market</a></li>
-				<li><a href="leaderboard.html">Leaderboard</a></li> 
-				<li><a href="settings.html">Settings</a></li>
-			</ul>
-			<ul class="nav-right">
-				<li><a href="login.html">Login</a></li>
-				<li><a href="register.html">Register</a></li>
-			</ul>
-		</nav>
-	</header>
+    <header>
+        <nav>
+            <h1><a href="index.html" style="color: white; text-decoration: none;">Crypto Express</a></h1>
+            <ul class="main-nav">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="market.html">Market</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+            <ul class="nav-right">
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <main>
+        <!-- Summary Section -->
+        <section class="summary-container">
+            <div class="summary-item">
+                <h3>Total Coins</h3>
+                <p id="total-coins">0</p>
+            </div>
+            <div class="summary-item">
+                <h3>Total Value (USD)</h3>
+                <p id="total-value">$0.00</p>
+            </div>
+            <div class="summary-item">
+                <h3>Wins</h3>
+                <p id="win-count">0</p>
+            </div>
+            <div class="summary-item">
+                <h3>Losses</h3>
+                <p id="loss-count">0</p>
+            </div>
+        </section>
+
+        <!-- Market Overview Section -->
         <section id="market-overview">
             <h2>Market Overview</h2>
             <div id="crypto-list">
@@ -31,13 +171,28 @@
             </div>
         </section>
 
-        <section id="portfolio">
-            <h2>Your Portfolio</h2>
-            <div id="portfolio-list">
-                <!-- JavaScript will populate this -->
+        <!-- Portfolio Section in Index Page -->
+        <section id="index-portfolio">
+            <h2>Your Portfolio (Summary)</h2>
+            <div id="portfolio-list-index">
+                <table class="portfolio-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Cryptocurrency</th>
+                            <th>Amount</th>
+                            <th>Value (USD)</th>
+                            <th>Bought Price (USD)</th>
+                            <th>Current Price (USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolio-table-body">
+                        <!-- JavaScript will populate this -->
+                    </tbody>
+                </table>
             </div>
         </section>
 
+        <!-- Buy/Sell Actions -->
         <section id="actions">
             <h2>Buy/Sell</h2>
             <form id="trade-form">
@@ -51,6 +206,7 @@
 
                 <button type="button" id="buy-btn">Buy</button>
                 <button type="button" id="sell-btn">Sell</button>
+                <button type="button" id="update-btn">Update Prices</button>
             </form>
         </section>
     </main>
@@ -59,6 +215,97 @@
         <p>&copy; 2024 Crypto Express</p>
     </footer>
 
-    <script src="scripts.js"></script>
+    <script>
+        const cryptoData = [
+            { name: 'Bitcoin', symbol: 'BTC', price: 34000.00 },
+            { name: 'Ethereum', symbol: 'ETH', price: 1900.00 },
+            { name: 'Binance Coin', symbol: 'BNB', price: 540.00 },
+            { name: 'Ripple', symbol: 'XRP', price: 0.50 },
+            { name: 'Cardano', symbol: 'ADA', price: 0.25 }
+        ];
+
+        const portfolioData = [
+            { name: 'Bitcoin', symbol: 'BTC', amount: 0.5, price: 64000.00, boughtPrice: 60000.00 },
+            { name: 'Ethereum', symbol: 'ETH', amount: 10, price: 2400.00, boughtPrice: 2000.00 },
+            { name: 'Cardano', symbol: 'ADA', amount: 1000, price: 0.34, boughtPrice: 0.30 }
+        ];
+
+        function populateMarket() {
+            const cryptoListDiv = document.getElementById('crypto-list');
+            cryptoListDiv.innerHTML = '';
+
+            cryptoData.forEach(crypto => {
+                const cryptoItem = document.createElement('div');
+                cryptoItem.classList.add('crypto-item');
+                cryptoItem.innerHTML = `
+                    <img src="https://via.placeholder.com/50" alt="${crypto.name} logo">
+                    <div class="crypto-item-details">
+                        <span class="crypto-item-name">${crypto.name} (${crypto.symbol})</span>
+                        <span class="crypto-item-price">Price: $${crypto.price.toFixed(2)}</span>
+                    </div>
+                `;
+                cryptoListDiv.appendChild(cryptoItem);
+            });
+
+            const cryptoSelect = document.getElementById('crypto');
+            cryptoSelect.innerHTML = '';
+            cryptoData.forEach(crypto => {
+                const option = document.createElement('option');
+                option.value = crypto.symbol;
+                option.textContent = `${crypto.name} (${crypto.symbol})`;
+                cryptoSelect.appendChild(option);
+            });
+        }
+
+        function populateIndexPortfolio() {
+            const portfolioTableBody = document.getElementById('portfolio-table-body');
+            portfolioTableBody.innerHTML = '';
+
+            portfolioData.forEach(asset => {
+                const row = document.createElement('tr');
+                const assetValue = asset.amount * asset.price;
+                row.innerHTML = `
+                    <td>${asset.name} (${asset.symbol})</td>
+                    <td>${asset.amount}</td>
+                    <td>$${assetValue.toFixed(2)}</td>
+                    <td>$${asset.boughtPrice.toFixed(2)}</td>
+                    <td>$${asset.price.toFixed(2)}</td>
+                `;
+                portfolioTableBody.appendChild(row);
+            });
+        }
+
+        function calculateSummary() {
+            let totalCoins = 0;
+            let totalValue = 0;
+            let wins = 0;
+            let losses = 0;
+
+            portfolioData.forEach(asset => {
+                totalCoins += asset.amount;
+                totalValue += asset.amount * asset.price;
+                if (asset.price > asset.boughtPrice) {
+                    wins++;
+                } else if (asset.price < asset.boughtPrice) {
+                    losses++;
+                }
+            });
+
+            document.getElementById('total-coins').textContent = totalCoins.toFixed(2);
+            document.getElementById('total-value').textContent = `$${totalValue.toFixed(2)}`;
+            document.getElementById('win-count').textContent = wins;
+            document.getElementById('loss-count').textContent = losses;
+        }
+
+        window.onload = function() {
+            populateMarket();
+            populateIndexPortfolio();
+            calculateSummary();
+        };
+    </script>
 </body>
 </html>
+
+
+
+

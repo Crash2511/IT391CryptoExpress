@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Leaderboard table styles */
         #leaderboard-table {
             width: 80%;
             margin: 0 auto;
@@ -22,6 +20,7 @@
             background-color: #343a40;
             color: white;
             text-transform: uppercase;
+            cursor: pointer;
         }
 
         #leaderboard-table tbody tr:nth-child(odd) {
@@ -32,7 +31,6 @@
             background-color: #e0e0e0;
         }
 
-        /* Special styles for the top 3 ranks */
         #leaderboard-table tbody tr:nth-child(1) td {
             font-weight: bold;
             color: gold;
@@ -45,38 +43,46 @@
 
         #leaderboard-table tbody tr:nth-child(3) td {
             font-weight: bold;
-            color: #cd7f32; /* Bronze */
+            color: #cd7f32;
         }
 
-        /* Hover effect */
         #leaderboard-table tbody tr:hover {
             background-color: #ddd;
         }
 
-        /* Style for the page title */
         h2 {
             text-align: center;
             margin-bottom: 20px;
         }
+
+        .sort-arrow {
+            margin-left: 5px;
+            font-size: 0.8em;
+        }
+
+        .active-sort {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-	<header>
-		<nav>
-			<h1><a href="index.html">Crypto Express</a></h1>
-			<ul class="main-nav">
-				<li><a href="index.html">Home</a></li>
-				<li><a href="portfolio.html">Portfolio</a></li>
-				<li><a href="market.html">Market</a></li>
-				<li><a href="leaderboard.html">Leaderboard</a></li>
-				<li><a href="settings.html">Settings</a></li>
-			</ul>
-			<ul class="nav-right">
-				<li><a href="login.html">Login</a></li>
-				<li><a href="register.html">Register</a></li>
-			</ul>
-		</nav>
-	</header>
+    <header>
+        <nav>
+            <h1><a href="index.html">Crypto Express</a></h1>
+            <ul class="main-nav">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="market.html">Market</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+            <ul class="nav-right">
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
+            </ul>
+        </nav>
+    </header>
 
     <main>
         <section id="leaderboard">
@@ -84,9 +90,15 @@
             <table id="leaderboard-table">
                 <thead>
                     <tr>
-                        <th>Rank</th>
-                        <th>User</th>
-                        <th>Portfolio Value</th>
+                        <th id="rank-header" onclick="resetLeaderboard()">
+                            Rank<span class="sort-arrow" id="rank-arrow">▲</span>
+                        </th>
+                        <th id="user-header" onclick="sortLeaderboard('user')">
+                            User<span class="sort-arrow" id="user-arrow">▲</span>
+                        </th>
+                        <th id="value-header" onclick="sortLeaderboard('value')">
+                            Portfolio Value<span class="sort-arrow" id="value-arrow">▲</span>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -100,40 +112,78 @@
         <p>&copy; 2024 Crypto Express</p>
     </footer>
 
-    <script>
-        // Mock leaderboard data
-        const leaderboardData = [
-            { user: 'Dean', value: 120000 },
-            { user: 'Kaleb', value: 85000 },
-            { user: 'Jason', value: 78000 },
-            { user: 'Karson', value: 54000 },
-            { user: 'Clay', value: 30000 }
-        ];
+<script>
+    // Original leaderboard data
+    const originalLeaderboardData = [
+        { user: 'Dean', value: 120000 },
+        { user: 'Kaleb', value: 85000 },
+        { user: 'Jason', value: 78000 },
+        { user: 'Karson', value: 54000 },
+        { user: 'Clay', value: 30000 }
+    ];
 
-        // Function to populate the leaderboard table
-        function populateLeaderboard() {
-            const leaderboardTableBody = document.querySelector('#leaderboard-table tbody');
-            
-            // Clear existing rows
-            leaderboardTableBody.innerHTML = '';
+    let currentSortColumn = 'rank';
+    let isAscending = false; 
 
-            // Sort users by portfolio value (descending)
-            leaderboardData.sort((a, b) => b.value - a.value);
+    // Function to update sort icons in the table headers
+    function updateSortIcons() {
+        document.getElementById('rank-arrow').textContent = currentSortColumn === 'rank' ? (isAscending ? '▲' : '▼') : '▲';
+        document.getElementById('user-arrow').textContent = currentSortColumn === 'user' ? (isAscending ? '▲' : '▼') : '▲';
+        document.getElementById('value-arrow').textContent = currentSortColumn === 'value' ? (isAscending ? '▲' : '▼') : '▲';
+    }
 
-            // Populate rows
-            leaderboardData.forEach((user, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${user.user}</td>
-                    <td>$${user.value.toLocaleString()}</td>
-                `;
-                leaderboardTableBody.appendChild(row);
-            });
+    // Function to populate the leaderboard table
+    function populateLeaderboard(data) {
+        updateSortIcons();
+        const leaderboardTableBody = document.querySelector('#leaderboard-table tbody');
+        leaderboardTableBody.innerHTML = '';
+
+        data.forEach((user, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${user.user}</td>
+                <td>$${user.value.toLocaleString()}</td>
+            `;
+            leaderboardTableBody.appendChild(row);
+        });
+    }
+
+    // Function to sort leaderboard by a given column
+    function sortLeaderboard(column) {
+        if (currentSortColumn === column) {
+            isAscending = !isAscending;
+        } else {
+            currentSortColumn = column;
+            isAscending = column === 'rank' ? false : true;
         }
 
-        // Load leaderboard on page load
-        window.onload = populateLeaderboard;
-    </script>
+        const sortedData = originalLeaderboardData.slice();
+        
+        if (column === 'user') {
+            sortedData.sort((a, b) => {
+                return isAscending ? a.user.localeCompare(b.user) : b.user.localeCompare(a.user);
+            });
+        } else if (column === 'value') {
+            sortedData.sort((a, b) => isAscending ? a.value - b.value : b.value - a.value);
+        }
+
+        populateLeaderboard(sortedData);
+    }
+
+    // Function to reset leaderboard to its original order
+    function resetLeaderboard() {
+        currentSortColumn = 'rank';
+        isAscending = false;
+        populateLeaderboard(originalLeaderboardData);
+    }
+
+    // Load leaderboard on page load
+    window.onload = () => resetLeaderboard();
+</script>
+
 </body>
 </html>
+
+
+

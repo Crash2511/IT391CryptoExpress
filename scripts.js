@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const cryptos = [
-        { name: "Bitcoin", symbol: "BTC", price: 50000 },
-        { name: "Ethereum", symbol: "ETH", price: 3000 },
-        { name: "Litecoin", symbol: "LTC", price: 200 }
+        { name: "Bitcoin", symbol: "BTC", price: 64000 },
+        { name: "Ethereum", symbol: "ETH", price: 2400 },
+        { name: "Litecoin", symbol: "LTC", price: 64 }
     ];
 
     const portfolio = {

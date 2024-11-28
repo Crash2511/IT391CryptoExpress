@@ -50,6 +50,12 @@
         p {
             text-align: center;
         }
+
+        /* Additional styling for reset password link */
+        .reset-link {
+            text-align: center;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -67,6 +73,9 @@
             <input type="password" id="password" name="password" required>
 
             <button type="button" id="login-btn">Login</button>
+            <div class="reset-link">
+                <p><a href="reset-password.html">Forgot Password?</a></p>
+            </div>
         </form>
         <p>Don't have an account? <a href="register.html">Register here</a>.</p>
     </main>
