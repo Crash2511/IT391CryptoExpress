@@ -1,4 +1,4 @@
-/* General bod and font styles */
+/* General body and font styles */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -81,52 +81,12 @@ h2 {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-#crypto-list {
+#crypto-list, #portfolio-list {
     display: flex;
     flex-wrap: wrap;
 }
-/* Index page portfolio - horizontal layout */
-#portfolio-list-index {
-    display: flex;
-    flex-direction: row; /* Horizontal layout */
-    gap: 20px;
-    justify-content: space-around;
-    padding: 20px 0;
-}
 
-.portfolio-item {
-    text-align: center;
-    padding: 10px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 30%; /* Adjust width to fit in a row */
-}
-
-/* Portfolio page table */
-#portfolio-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-}
-
-#portfolio-table th, #portfolio-table td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: center;
-}
-
-#portfolio-table th {
-    background-color: #f4f4f4;
-    font-weight: bold;
-}
-
-#portfolio-list {
-    display: table-row-group; /* or simply remove these styles */
-}
-
-
-.crypto-item {
+.crypto-item, .portfolio-item {
     flex: 1 1 calc(33.333% - 10px);
     margin: 5px;
     padding: 10px;
