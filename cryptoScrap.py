@@ -44,13 +44,21 @@ def get_crypto_data(symbol):
             price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
             price = float(price_element.text.replace(',', '')) if price_element else 0.00
 
-            # Additional fields with improved error handling
-            market_cap_element = soup.find('td', string='Market Cap')
-            market_cap = market_cap_element.find_next('td').text if market_cap_element else "N/A"
+            # Additional fields with improved error handling and more robust parsing
+            market_cap = "N/A"
+            volume = "0"
 
-            volume_element = soup.find('td', string='Volume')
-            volume = volume_element.find_next('td').text if volume_element else "0"
-            
+            # Try different ways to find market cap and volume
+            for row in soup.find_all('tr'):
+                header = row.find('td', {'class': 'C($primaryColor) W(51%)'}).text if row.find('td', {'class': 'C($primaryColor) W(51%)'}) else None
+                value = row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}).text if row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}) else None
+                
+                if header and value:
+                    if 'Market Cap' in header:
+                        market_cap = value
+                    elif 'Volume' in header:
+                        volume = value
+
             # Validate and parse extracted data
             return {
                 'name': symbol,
