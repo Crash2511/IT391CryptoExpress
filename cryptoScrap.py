@@ -36,7 +36,6 @@ def connect_to_database(db_url):
         logging.error(f"Error connecting to database: {e}")
         return None
 
-# Function to scrape Yahoo Finance for given cryptocurrency symbols
 def get_crypto_data(symbol, retries=3):
     url = f'https://finance.yahoo.com/quote/{symbol}'
     headers = {
@@ -49,60 +48,47 @@ def get_crypto_data(symbol, retries=3):
             r = requests.get(url, headers=headers, timeout=5)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
-                
-                # Fetch price-related fields using updated CSS selectors
+
+                # Fetch price
                 price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
                 price = float(price_element.text.replace(',', '').strip()) if price_element else 0.00
 
+                # Fetch price change
                 price_change_element = soup.find('fin-streamer', {'data-field': 'regularMarketChange'})
                 price_change_text = price_change_element.text if price_change_element else "0.00"
-                price_change_text = re.sub(r'[\(\),]', '', price_change_text).strip()
-                try:
-                    price_change = float(price_change_text)
-                except ValueError:
-                    logging.warning(f"Could not convert price change for {symbol}: {price_change_text}")
-                    price_change = 0.00
+                price_change_text = re.sub(r'[^\d.-]', '', price_change_text)  # Remove non-numeric characters
+                price_change = float(price_change_text) if price_change_text else 0.00
 
+                # Fetch percent change
                 change_percent_element = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
                 change_percent_text = change_percent_element.text if change_percent_element else "0.00%"
-                change_percent_text = re.sub(r'[\(\)%]', '', change_percent_text).strip()
-                try:
-                    change_percent = float(change_percent_text)
-                except ValueError:
-                    logging.warning(f"Could not convert change percent for {symbol}: {change_percent_text}")
-                    change_percent = 0.00
+                change_percent_text = re.sub(r'[^\d.-]', '', change_percent_text)  # Remove non-numeric characters
+                change_percent = float(change_percent_text) if change_percent_text else 0.00
 
                 # Fetch market cap, volume, and circulating supply
-                market_cap = "N/A"
-                volume = "0"
-                circulating_supply = "0"
+                market_cap, volume, circulating_supply = "N/A", 0.00, 0.00
 
-                # Try finding market cap, volume, and circulating supply using simplified parsing
                 stats_table = soup.find_all('tr')
                 for row in stats_table:
-                    header = row.find('td', {'class': 'C($primaryColor) W(51%)'}).text if row.find('td', {'class': 'C($primaryColor) W(51%)'}) else None
-                    value = row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}).text if row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}) else None
-                    
+                    header = row.find('td', {'class': 'C($primaryColor) W(51%)'})
+                    value = row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'})
                     if header and value:
-                        if 'Market Cap' in header:
-                            market_cap = value.strip()
-                        elif 'Volume' in header:
-                            volume = value.strip()
-                        elif 'Circulating Supply' in header:
-                            circulating_supply = value.strip()
-
-                # Validate and parse extracted data
-                try:
-                    volume = float(volume.replace(',', '').replace('B', 'e9').replace('M', 'e6')) if volume != "N/A" else 0.00
-                except ValueError:
-                    logging.warning(f"Could not convert volume for {symbol}: {volume}")
-                    volume = 0.00
-
-                try:
-                    circulating_supply = float(circulating_supply.replace(',', '').replace('B', 'e9').replace('M', 'e6')) if circulating_supply != "N/A" else 0.00
-                except ValueError:
-                    logging.warning(f"Could not convert circulating supply for {symbol}: {circulating_supply}")
-                    circulating_supply = 0.00
+                        header_text = header.text.strip()
+                        value_text = value.text.strip()
+                        if 'Market Cap' in header_text:
+                            market_cap = value_text
+                        elif 'Volume' in header_text:
+                            volume = value_text.replace(',', '').replace('B', 'e9').replace('M', 'e6')
+                            try:
+                                volume = float(volume)
+                            except ValueError:
+                                volume = 0.00
+                        elif 'Circulating Supply' in header_text:
+                            circulating_supply = value_text.replace(',', '').replace('B', 'e9').replace('M', 'e6')
+                            try:
+                                circulating_supply = float(circulating_supply)
+                            except ValueError:
+                                circulating_supply = 0.00
 
                 return {
                     'name': symbol,
@@ -119,10 +105,6 @@ def get_crypto_data(symbol, retries=3):
                 logging.error(f"Failed to fetch data for {symbol}: HTTP {r.status_code}")
                 attempt += 1
                 time.sleep(2)
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Network error getting data for {symbol}, attempt {attempt + 1}: {e}")
-            attempt += 1
-            time.sleep(2)
         except Exception as e:
             logging.error(f"Error getting data for {symbol}, attempt {attempt + 1}: {e}")
             attempt += 1
