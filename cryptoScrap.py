@@ -10,6 +10,7 @@ from sqlalchemy import create_engine, Column, String, DECIMAL, TIMESTAMP
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime, timezone
 from decimal import Decimal
+from concurrent.futures import ThreadPoolExecutor
 import time
 
 # Set up logging
@@ -50,19 +51,16 @@ def connect_to_database(db_url):
         return None
 
 # Selenium function to scrape Yahoo Finance
-def scrape_crypto_data(driver, symbol):
+def scrape_crypto_data(symbol):
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=Service('/usr/bin/chromedriver'), options=options)
+
     url = f'https://finance.yahoo.com/quote/{symbol}'
     logging.info(f"Fetching data for {symbol} using Selenium")
     driver.get(url)
-
-    # Wait for elements to load
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div#quote-summary'))
-        )
-    except TimeoutException:
-        logging.error(f"Timeout loading data for {symbol}")
-        return None
 
     # Initialize data dictionary
     crypto_data = {
@@ -86,6 +84,10 @@ def scrape_crypto_data(driver, symbol):
     }
 
     try:
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketPrice"]'))
+        )
+
         # Scrape price-related data
         crypto_data['price'] = Decimal(
             driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketPrice"]').text.replace(',', '')
@@ -117,9 +119,10 @@ def scrape_crypto_data(driver, symbol):
                 crypto_data['circulating_supply'] = convert_to_decimal(value)
             elif 'Volume' in header and '24 Hr' not in header:
                 crypto_data['volume'] = convert_to_decimal(value)
-
-    except NoSuchElementException as e:
-        logging.warning(f"Missing data for {symbol}: {e}")
+    except Exception as e:
+        logging.warning(f"Error fetching data for {symbol}: {e}")
+    finally:
+        driver.quit()
 
     return crypto_data
 
@@ -168,30 +171,25 @@ if __name__ == '__main__':
     if engine is None:
         exit("Failed to connect to database. Exiting.")
 
-    # Configure Selenium WebDriver
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(service=Service('/usr/bin/chromedriver'), options=options)
-
     # List of cryptocurrencies to scrape
-    mycrypto = ['BTC-USD', 'ETH-USD', 'SOL-USD']
-    stockdata = []
+    mycrypto = [
+        'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD', 'BNB-USD',
+        'SHIB-USD', 'DOT-USD', 'LTC-USD', 'AVAX-USD', 'MATIC-USD', 'ATOM-USD', 'TRX-USD',
+        'UNI-USD', 'BCH-USD', 'XLM-USD', 'ICP-USD', 'HBAR-USD', 'VET-USD'
+    ]
 
-    for symbol in mycrypto:
-        data = scrape_crypto_data(driver, symbol)
-        if data:
-            stockdata.append(data)
+    # Multi-threading to speed up scraping
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = list(executor.map(scrape_crypto_data, mycrypto))
 
-    driver.quit()
+    # Filter out any failed attempts
+    valid_results = [res for res in results if res is not None]
 
-    # Insert data into the database
-    insert_data_into_database(engine, stockdata)
+    # Insert valid data into the database
+    insert_data_into_database(engine, valid_results)
 
     logging.info("Data scraping and insertion completed successfully.")
 
- 
 
 
 
