@@ -49,15 +49,13 @@ def get_crypto_data(symbol):
             volume = "0"
 
             # Try different ways to find market cap and volume
-            for row in soup.find_all('tr'):
-                header = row.find('td', string='Market Cap').text if row.find('td', string='Market Cap') else None
-                value = row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}).text if row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}) else None
-                
-                if header and value:
-                    if 'Market Cap' in header:
-                        market_cap = value
-                    elif 'Volume' in header:
-                        volume = value
+            market_cap_element = soup.find('td', string=lambda text: text and 'Market Cap' in text)
+            if market_cap_element:
+                market_cap = market_cap_element.find_next('td').text.strip()
+
+            volume_element = soup.find('td', string=lambda text: text and 'Volume' in text)
+            if volume_element:
+                volume = volume_element.find_next('td').text.strip()
 
             # Validate and parse extracted data
             return {
