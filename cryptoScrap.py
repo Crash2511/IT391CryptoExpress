@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, Column, String, DECIMAL, TIMESTAMP
 from sqlalchemy.orm import declarative_base, sessionmaker
 import re
 from datetime import datetime, timezone
+import time
 
 # Updated to comply with SQLAlchemy 2.0
 Base = declarative_base()
@@ -33,10 +34,15 @@ def connect_to_database(db_url):
         return None
 
 # Function to scrape Yahoo Finance for given cryptocurrency symbols
+# Added import statement for requests to avoid NameError
 def get_crypto_data(symbol):
+    import requests
     url = f'https://finance.yahoo.com/quote/{symbol}'
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"
+    }
     try:
-        r = requests.get(url)
+        r = requests.get(url, headers=headers)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, 'html.parser')
             
@@ -49,13 +55,19 @@ def get_crypto_data(symbol):
             volume = "0"
 
             # Try different ways to find market cap and volume
-            market_cap_element = soup.find('td', string=lambda text: text and 'Market Cap' in text)
-            if market_cap_element:
-                market_cap = market_cap_element.find_next('td').text.strip()
+            try:
+                market_cap_element = soup.find('td', string=re.compile(r'Market Cap', re.IGNORECASE))
+                if market_cap_element:
+                    market_cap = market_cap_element.find_next('td').text.strip()
+            except Exception as e:
+                print(f"Error finding market cap for {symbol}: {e}")
 
-            volume_element = soup.find('td', string=lambda text: text and 'Volume' in text)
-            if volume_element:
-                volume = volume_element.find_next('td').text.strip()
+            try:
+                volume_element = soup.find('td', string=re.compile(r'Volume', re.IGNORECASE))
+                if volume_element:
+                    volume = volume_element.find_next('td').text.strip()
+            except Exception as e:
+                print(f"Error finding volume for {symbol}: {e}")
 
             # Validate and parse extracted data
             return {
@@ -69,6 +81,9 @@ def get_crypto_data(symbol):
         else:
             print(f"Failed to fetch data for {symbol}: HTTP {r.status_code}")
             return None
+    except requests.exceptions.RequestException as e:
+        print(f"Network error getting data for {symbol}: {e}")
+        return None
     except Exception as e:
         print(f"Error getting data for {symbol}: {e}")
         return None
@@ -117,11 +132,12 @@ if __name__ == '__main__':
     ]
     stockdata = []
 
-    # Scrape data for each symbol
+    # Scrape data for each symbol with delay to avoid rate limiting
     for symbol in mycrypto:
         data = get_crypto_data(symbol)
         if data:
             stockdata.append(data)
+        time.sleep(2)  # Add delay to avoid being blocked
 
     # Insert scraped data into the database
     insert_data_into_database(engine, stockdata)
