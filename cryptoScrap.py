@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 from sqlalchemy import create_engine, Column, String, DECIMAL, TIMESTAMP
 from sqlalchemy.orm import declarative_base, sessionmaker
-import re
 from datetime import datetime, timezone
 import time
 import logging
@@ -22,9 +21,6 @@ class CryptoInformation(Base):
     market_cap = Column(String(20), nullable=False, default="0")
     volume = Column(DECIMAL(20, 2), nullable=False, default=0.00)
     circulating_supply = Column(DECIMAL(20, 2), nullable=False, default=0.00)
-    total_supply = Column(DECIMAL(20, 2), nullable=False, default=0.00)
-    price_high = Column(DECIMAL(10, 2), nullable=False, default=0.00)
-    price_low = Column(DECIMAL(10, 2), nullable=False, default=0.00)
     trade_time = Column(TIMESTAMP)
 
 # Function to connect to the database
@@ -38,7 +34,6 @@ def connect_to_database(db_url):
         return None
 
 # Function to scrape Yahoo Finance for given cryptocurrency symbols
-# Added retry mechanism and increased timeout
 def get_crypto_data(symbol, retries=3):
     import requests
     url = f'https://finance.yahoo.com/quote/{symbol}'
@@ -49,7 +44,7 @@ def get_crypto_data(symbol, retries=3):
     while attempt < retries:
         try:
             logging.info(f"Fetching data for {symbol}, attempt {attempt + 1}")
-            r = requests.get(url, headers=headers, timeout=10)
+            r = requests.get(url, headers=headers, timeout=5)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
                 
@@ -57,24 +52,24 @@ def get_crypto_data(symbol, retries=3):
                 price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
                 price = float(price_element.text.replace(',', '')) if price_element else 0.00
 
-                # Additional fields with improved error handling and more robust parsing
+                # Fetch market cap, volume, and circulating supply
                 market_cap = "N/A"
                 volume = "0"
+                circulating_supply = "0"
 
-                # Try different ways to find market cap and volume
-                try:
-                    market_cap_element = soup.find('td', string=re.compile(r'Market Cap', re.IGNORECASE))
-                    if market_cap_element:
-                        market_cap = market_cap_element.find_next('td').text.strip()
-                except Exception as e:
-                    logging.warning(f"Error finding market cap for {symbol}: {e}")
-
-                try:
-                    volume_element = soup.find('td', string=re.compile(r'Volume', re.IGNORECASE))
-                    if volume_element:
-                        volume = volume_element.find_next('td').text.strip()
-                except Exception as e:
-                    logging.warning(f"Error finding volume for {symbol}: {e}")
+                # Try finding market cap, volume, and circulating supply using simplified parsing
+                stats_table = soup.find_all('tr')
+                for row in stats_table:
+                    header = row.find('td', {'class': 'C($primaryColor) W(51%)'}).text if row.find('td', {'class': 'C($primaryColor) W(51%)'}) else None
+                    value = row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}).text if row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}) else None
+                    
+                    if header and value:
+                        if 'Market Cap' in header:
+                            market_cap = value
+                        elif 'Volume' in header:
+                            volume = value
+                        elif 'Circulating Supply' in header:
+                            circulating_supply = value
 
                 # Validate and parse extracted data
                 return {
@@ -82,7 +77,8 @@ def get_crypto_data(symbol, retries=3):
                     'name_abreviation': symbol.split('-')[0],
                     'price': price,
                     'market_cap': market_cap,
-                    'volume': float(re.sub('[^0-9.]', '', volume)) if volume else 0.00,
+                    'volume': float(volume.replace(',', '').replace('B', '')) if volume else 0.00,
+                    'circulating_supply': float(circulating_supply.replace(',', '').replace('M', '')) if circulating_supply else 0.00,
                     'trade_time': datetime.now(timezone.utc)
                 }
             else:
@@ -132,15 +128,12 @@ if __name__ == '__main__':
         exit("Failed to connect to database. Exiting.")
 
     # List of cryptocurrency symbols to scrape
-    mycrypto = [
-        'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 'USDC-USD',
-        'ADA-USD', 'SHIB-USD', 'AVAX-USD', 'TRX-USD', 'TON-USD', 'WBTC-USD', 'XLM-USD', 'DOT-USD',
-        'LINK-USD', 'BCH-USD', 'SUI-USD', 'PEPE-USD', 'NEAR-USD', 'LTC-USD', 'LEO-USD', 'UNI-USD',
-        'HBAR-USD', 'APT-USD', 'ICP-USD', 'DAI-USD', 'CRO-USD', 'ETC-USD', 'POL-USD', 'TAO-USD',
-        'RENDER-USD', 'FET-USD', 'KAS-USD', 'FIL-USD', 'ALGO-USD', 'ARB-USD', 'VET-USD', 'STX-USD',
-        'TIA-USD', 'BONK-USD', 'IMX-USD', 'ATOM-USD', 'WBT-USD', 'WIF-USD', 'OKB-USD', 'OM-USD',
-        'MNT-USD', 'OP-USD'
-    ]
+mycrypto = [ 'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 
+            'USDC-USD', 'ADA-USD', 'SHIB-USD', 'AVAX-USD', 'TRX-USD', 'TON-USD', 'WBTC-USD', 
+            'XLM-USD', 'DOT-USD', 'LINK-USD', 'BCH-USD', 'SUI-USD', 'PEPE-USD', 'NEAR-USD', 'LTC-USD',
+            'LEO-USD', 'UNI-USD', 'HBAR-USD', 'APT-USD', 'ICP-USD', 'DAI-USD', 'CRO-USD', 'ETC-USD', 
+            'POL-USD', 'TAO-USD', 'RENDER-USD', 'FET-USD', 'KAS-USD', 'FIL-USD', 'ALGO-USD', 'ARB-USD',
+            'VET-USD', 'STX-USD', 'TIA-USD', 'BONK-USD', 'IMX-USD', 'ATOM-USD', 'WBT-USD', 'WIF-USD', 'OKB-USD', 'OM-USD', 'MNT-USD', 'OP-USD' ]
     stockdata = []
 
     # Scrape data for each symbol with delay to avoid rate limiting
@@ -153,3 +146,4 @@ if __name__ == '__main__':
     # Insert scraped data into the database
     insert_data_into_database(engine, stockdata)
     logging.info("Data extraction and insertion completed.")
+
