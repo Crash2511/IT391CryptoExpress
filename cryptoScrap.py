@@ -5,6 +5,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime, timezone
 import time
 import logging
+import re
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,7 +38,6 @@ def connect_to_database(db_url):
 
 # Function to scrape Yahoo Finance for given cryptocurrency symbols
 def get_crypto_data(symbol, retries=3):
-    import requests
     url = f'https://finance.yahoo.com/quote/{symbol}'
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"
@@ -52,13 +52,25 @@ def get_crypto_data(symbol, retries=3):
                 
                 # Fetch price-related fields using updated CSS selectors
                 price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
-                price = float(price_element.text.replace(',', '')) if price_element else 0.00
+                price = float(price_element.text.replace(',', '').strip()) if price_element else 0.00
 
                 price_change_element = soup.find('fin-streamer', {'data-field': 'regularMarketChange'})
-                price_change = float(price_change_element.text.replace(',', '')) if price_change_element else 0.00
+                price_change_text = price_change_element.text if price_change_element else "0.00"
+                price_change_text = re.sub(r'[\(\),]', '', price_change_text).strip()
+                try:
+                    price_change = float(price_change_text)
+                except ValueError:
+                    logging.warning(f"Could not convert price change for {symbol}: {price_change_text}")
+                    price_change = 0.00
 
                 change_percent_element = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
-                change_percent = float(change_percent_element.text.replace('%', '').replace(',', '')) if change_percent_element else 0.00
+                change_percent_text = change_percent_element.text if change_percent_element else "0.00%"
+                change_percent_text = re.sub(r'[\(\)%]', '', change_percent_text).strip()
+                try:
+                    change_percent = float(change_percent_text)
+                except ValueError:
+                    logging.warning(f"Could not convert change percent for {symbol}: {change_percent_text}")
+                    change_percent = 0.00
 
                 # Fetch market cap, volume, and circulating supply
                 market_cap = "N/A"
@@ -73,13 +85,25 @@ def get_crypto_data(symbol, retries=3):
                     
                     if header and value:
                         if 'Market Cap' in header:
-                            market_cap = value
+                            market_cap = value.strip()
                         elif 'Volume' in header:
-                            volume = value
+                            volume = value.strip()
                         elif 'Circulating Supply' in header:
-                            circulating_supply = value
+                            circulating_supply = value.strip()
 
                 # Validate and parse extracted data
+                try:
+                    volume = float(volume.replace(',', '').replace('B', 'e9').replace('M', 'e6')) if volume != "N/A" else 0.00
+                except ValueError:
+                    logging.warning(f"Could not convert volume for {symbol}: {volume}")
+                    volume = 0.00
+
+                try:
+                    circulating_supply = float(circulating_supply.replace(',', '').replace('B', 'e9').replace('M', 'e6')) if circulating_supply != "N/A" else 0.00
+                except ValueError:
+                    logging.warning(f"Could not convert circulating supply for {symbol}: {circulating_supply}")
+                    circulating_supply = 0.00
+
                 return {
                     'name': symbol,
                     'name_abreviation': symbol.split('-')[0],
@@ -87,8 +111,8 @@ def get_crypto_data(symbol, retries=3):
                     'price_change': price_change,
                     'change_percent': change_percent,
                     'market_cap': market_cap,
-                    'volume': float(volume.replace(',', '').replace('B', '')) if volume else 0.00,
-                    'circulating_supply': float(circulating_supply.replace(',', '').replace('M', '')) if circulating_supply else 0.00,
+                    'volume': volume,
+                    'circulating_supply': circulating_supply,
                     'trade_time': datetime.now(timezone.utc)
                 }
             else:
@@ -149,16 +173,16 @@ if __name__ == '__main__':
     ]
     stockdata = []
 
-    # Scrape data for each symbol with delay to avoid rate limiting
+    # Scrape data for each symbol
     for symbol in mycrypto:
         data = get_crypto_data(symbol)
         if data:
             stockdata.append(data)
-        time.sleep(2)  # Add delay to avoid being blocked
 
-    # Insert scraped data into the database
+    # Insert scraped data into the
     insert_data_into_database(engine, stockdata)
-    logging.info("Data extraction and insertion completed.")
+
+    logging.info("Data scraping and insertion completed successfully.")
 
 
 
