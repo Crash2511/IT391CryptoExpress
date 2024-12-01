@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from sqlalchemy import create_engine, Column, String, DECIMAL, TIMESTAMP
 from sqlalchemy.orm import declarative_base, sessionmaker
 import re
+import datetime
 
 # Updated to comply with SQLAlchemy 2.0
 Base = declarative_base()
@@ -47,12 +48,12 @@ def get_crypto_data(symbol):
             change_percent = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketChangePercent'})
 
             # Additional fields with improved error handling
-            market_cap = soup.find(string=re.compile('Market Cap'))
-            market_cap = market_cap.find_next('td').text if market_cap else "N/A"
+            market_cap_element = soup.find(string=re.compile('Market Cap'))
+            market_cap = market_cap_element.find_next('td').text if market_cap_element else "N/A"
 
-            volume = soup.find(string=re.compile('Volume'))
-            volume = volume.find_next('td').text if volume else "0"
-
+            volume_element = soup.find(string=re.compile('Volume'))
+            volume = volume_element.find_next('td').text if volume_element else "0"
+            
             # Validate and parse extracted data
             if price and price_change and change_percent:
                 return {
@@ -62,7 +63,8 @@ def get_crypto_data(symbol):
                     'price_change': float(price_change.text.replace(',', '')) if price_change else 0.00,
                     'change_percent': float(change_percent.text.replace('%', '').replace(',', '')) if change_percent else 0.00,
                     'market_cap': market_cap,
-                    'volume': float(volume.replace(',', '')) if volume.isnumeric() else 0.00,
+                    'volume': float(re.sub('[^0-9.]', '', volume)) if volume else 0.00,
+                    'trade_time': datetime.datetime.utcnow()
                 }
             else:
                 print(f"Missing critical data for {symbol}")
@@ -119,4 +121,5 @@ if __name__ == '__main__':
     # Insert scraped data into the database
     insert_data_into_database(engine, stockdata)
     print("Data extraction and insertion completed.")
+
 
