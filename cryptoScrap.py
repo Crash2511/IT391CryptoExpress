@@ -108,7 +108,15 @@ if __name__ == '__main__':
         exit("Failed to connect to database. Exiting.")
 
     # List of cryptocurrency symbols to scrape
-    mycrypto = ['BTC-USD', 'ETH-USD', 'BNB-USD', 'SOL-USD', 'DOGE-USD']
+    mycrypto = [
+        'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 'USDC-USD',
+        'ADA-USD', 'SHIB-USD', 'AVAX-USD', 'TRX-USD', 'TON-USD', 'WBTC-USD', 'XLM-USD', 'DOT-USD',
+        'LINK-USD', 'BCH-USD', 'SUI-USD', 'PEPE-USD', 'NEAR-USD', 'LTC-USD', 'LEO-USD', 'UNI-USD',
+        'HBAR-USD', 'APT-USD', 'ICP-USD', 'DAI-USD', 'CRO-USD', 'ETC-USD', 'POL-USD', 'TAO-USD',
+        'RENDER-USD', 'FET-USD', 'KAS-USD', 'FIL-USD', 'ALGO-USD', 'ARB-USD', 'VET-USD', 'STX-USD',
+        'TIA-USD', 'BONK-USD', 'IMX-USD', 'ATOM-USD', 'WBT-USD', 'WIF-USD', 'OKB-USD', 'OM-USD',
+        'MNT-USD', 'OP-USD'
+    ]
     stockdata = []
 
     # Scrape data for each symbol
@@ -120,5 +128,6 @@ if __name__ == '__main__':
     # Insert scraped data into the database
     insert_data_into_database(engine, stockdata)
     print("Data extraction and insertion completed.")
+
 
 
