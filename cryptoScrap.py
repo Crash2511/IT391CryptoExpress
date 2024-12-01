@@ -65,9 +65,12 @@ def get_crypto_data(symbol, retries=3):
                 change_percent_text = re.sub(r'[^\d.-]', '', change_percent_text)  # Remove non-numeric characters
                 change_percent = float(change_percent_text) if change_percent_text else 0.00
 
-                # Fetch market cap, volume, and circulating supply
-                market_cap, volume, circulating_supply = "N/A", 0.00, 0.00
+                # Initialize variables for remaining fields
+                market_cap = "N/A"
+                volume = 0.00
+                circulating_supply = 0.00
 
+                # Find stats table and process rows
                 stats_table = soup.find_all('tr')
                 for row in stats_table:
                     header = row.find('td', {'class': 'C($primaryColor) W(51%)'})
@@ -78,16 +81,18 @@ def get_crypto_data(symbol, retries=3):
                         if 'Market Cap' in header_text:
                             market_cap = value_text
                         elif 'Volume' in header_text:
-                            volume = value_text.replace(',', '').replace('B', 'e9').replace('M', 'e6')
+                            volume_text = value_text.replace(',', '').replace('T', 'e12').replace('B', 'e9').replace('M', 'e6')
                             try:
-                                volume = float(volume)
+                                volume = float(volume_text)
                             except ValueError:
+                                logging.warning(f"Could not parse volume for {symbol}: {value_text}")
                                 volume = 0.00
                         elif 'Circulating Supply' in header_text:
-                            circulating_supply = value_text.replace(',', '').replace('B', 'e9').replace('M', 'e6')
+                            circulating_supply_text = value_text.replace(',', '').replace('T', 'e12').replace('B', 'e9').replace('M', 'e6')
                             try:
-                                circulating_supply = float(circulating_supply)
+                                circulating_supply = float(circulating_supply_text)
                             except ValueError:
+                                logging.warning(f"Could not parse circulating supply for {symbol}: {value_text}")
                                 circulating_supply = 0.00
 
                 return {
