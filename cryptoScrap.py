@@ -18,9 +18,9 @@ class CryptoInformation(Base):
     __tablename__ = 'crypto_information'
     name = Column(String(50), primary_key=True, nullable=False)
     name_abreviation = Column(String(10), nullable=False)
-    price = Column(DECIMAL(10, 2), nullable=False, default=0.00)
-    price_change = Column(DECIMAL(10, 2), nullable=False, default=0.00)
-    change_percent = Column(DECIMAL(5, 2), nullable=False, default=0.00)
+    price = Column(DECIMAL(20, 10), nullable=False, default=0.00)  # Increased precision
+    price_change = Column(DECIMAL(20, 10), nullable=False, default=0.00)  # Increased precision
+    change_percent = Column(DECIMAL(10, 2), nullable=False, default=0.00)
     market_cap = Column(String(20), nullable=False, default="0")
     volume = Column(DECIMAL(20, 2), nullable=False, default=0.00)
     circulating_supply = Column(DECIMAL(20, 2), nullable=False, default=0.00)
@@ -56,21 +56,21 @@ def get_crypto_data(symbol, retries=3):
                 # Fetch price change
                 price_change_element = soup.find('fin-streamer', {'data-field': 'regularMarketChange'})
                 price_change_text = price_change_element.text if price_change_element else "0.00"
-                price_change_text = re.sub(r'[^\d.-]', '', price_change_text)  # Remove non-numeric characters
+                price_change_text = re.sub(r'[^\d.-]', '', price_change_text)
                 price_change = float(price_change_text) if price_change_text else 0.00
 
                 # Fetch percent change
                 change_percent_element = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
                 change_percent_text = change_percent_element.text if change_percent_element else "0.00%"
-                change_percent_text = re.sub(r'[^\d.-]', '', change_percent_text)  # Remove non-numeric characters
+                change_percent_text = re.sub(r'[^\d.-]', '', change_percent_text)
                 change_percent = float(change_percent_text) if change_percent_text else 0.00
 
-                # Initialize variables for remaining fields
+                # Initialize market_cap, volume, circulating_supply
                 market_cap = "N/A"
                 volume = 0.00
                 circulating_supply = 0.00
 
-                # Find stats table and process rows
+                # Extract stats from table
                 stats_table = soup.find_all('tr')
                 for row in stats_table:
                     header = row.find('td', {'class': 'C($primaryColor) W(51%)'})
@@ -78,9 +78,10 @@ def get_crypto_data(symbol, retries=3):
                     if header and value:
                         header_text = header.text.strip()
                         value_text = value.text.strip()
+
                         if 'Market Cap' in header_text:
                             market_cap = value_text
-                        elif 'Volume' in header_text:
+                        elif 'Volume' in header_text and '24hr' not in header_text:
                             volume_text = value_text.replace(',', '').replace('T', 'e12').replace('B', 'e9').replace('M', 'e6')
                             try:
                                 volume = float(volume_text)
