@@ -1,8 +1,8 @@
 import logging
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
@@ -38,6 +38,16 @@ class CryptoInformation(Base):
     max_supply = Column(String(50), nullable=True, default="N/A")
     volume_24hr_all_currencies = Column(String(50), nullable=True, default="N/A")
     trade_time = Column(TIMESTAMP)
+
+# Function to connect to the database
+def connect_to_database(db_url):
+    try:
+        engine = create_engine(db_url, pool_size=5, echo=False)
+        Base.metadata.create_all(engine)
+        return engine
+    except Exception as e:
+        logging.error(f"Error connecting to database: {e}")
+        return None
 
 # Selenium function to scrape Yahoo Finance
 def scrape_crypto_data(driver, symbol):
@@ -153,8 +163,10 @@ def insert_data_into_database(engine, data):
 # Main script
 if __name__ == '__main__':
     db_url = 'mysql+pymysql://user:password@localhost/crypto_express'
-    engine = create_engine(db_url)
-    Base.metadata.create_all(engine)
+    engine = connect_to_database(db_url)
+
+    if engine is None:
+        exit("Failed to connect to database. Exiting.")
 
     # Configure Selenium WebDriver
     options = Options()
@@ -178,6 +190,7 @@ if __name__ == '__main__':
     insert_data_into_database(engine, stockdata)
 
     logging.info("Data scraping and insertion completed successfully.")
+
  
 
 
