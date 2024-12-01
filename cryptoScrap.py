@@ -99,7 +99,7 @@ def insert_data_into_database(engine, data):
 
 
 if __name__ == '__main__':
-    db_url = 'mysql+mysqlconnector://user:password@localhost/crypto_simulator'
+    db_url = 'mysql+mysqldb://user:Battle2511!@localhost/crypto_express'
 
     engine = connect_to_database(db_url)
     if engine is None:
