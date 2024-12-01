@@ -42,30 +42,38 @@ def get_crypto_data(symbol):
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, 'html.parser')
             
+            # Update selectors as needed after inspecting the page
             price_element = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketPrice'})
             change_element = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketChange'})
             change_percent_element = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketChangePercent'})
-            market_cap_element = soup.find(text=re.compile('Market Cap')).find_next('td').text
-            volume_element = soup.find(text=re.compile('Volume')).find_next('td').text
+            market_cap_element = soup.find(string=re.compile('Market Cap'))
+            volume_element = soup.find(string=re.compile('Volume'))
             
-            if price_element and change_element and change_percent_element:
+            # Validate elements before accessing .text
+            if price_element and change_element and change_percent_element and market_cap_element and volume_element:
                 price = price_element.text.strip()
                 change = change_element.text.strip()
                 change_percent = change_percent_element.text.strip()
+                market_cap = market_cap_element.find_next('td').text.strip()
+                volume = volume_element.find_next('td').text.strip()
+                
                 return {
                     'name': symbol,
                     'name_abreviation': symbol.split('-')[0],
                     'price': float(price.replace(',', '')),
                     'price_change': float(change.replace(',', '')),
                     'change_percent': float(change_percent.replace('%', '').replace(',', '')),
-                    'market_cap': market_cap_element,
-                    'volume': volume_element
+                    'market_cap': market_cap,
+                    'volume': volume
                 }
             else:
                 print(f"Required data not found for {symbol}")
                 return None
+        elif r.status_code == 404:
+            print(f"Failed to fetch data for {symbol}: 404 Not Found")
+            return None
         else:
-            print(f"Failed to fetch data for {symbol}: {r.status_code}")
+            print(f"Failed to fetch data for {symbol}: HTTP {r.status_code}")
             return None
     except Exception as e:
         print(f"Error getting data for {symbol}: {e}")
