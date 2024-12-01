@@ -4,7 +4,6 @@ from sqlalchemy import create_engine, Column, String, DECIMAL, TIMESTAMP
 from sqlalchemy.orm import declarative_base, sessionmaker
 import re
 from datetime import datetime, timezone
-import time
 
 # Updated to comply with SQLAlchemy 2.0
 Base = declarative_base()
@@ -36,12 +35,8 @@ def connect_to_database(db_url):
 # Function to scrape Yahoo Finance for given cryptocurrency symbols
 def get_crypto_data(symbol):
     url = f'https://finance.yahoo.com/quote/{symbol}'
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"
-    }
-    
     try:
-        r = requests.get(url, headers=headers)
+        r = requests.get(url)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, 'html.parser')
             
@@ -54,19 +49,15 @@ def get_crypto_data(symbol):
             volume = "0"
 
             # Try different ways to find market cap and volume
-            try:
-                market_cap_element = soup.find('td', text='Market Cap')
-                if market_cap_element:
-                    market_cap = market_cap_element.find_next('td').text.strip()
-            except AttributeError:
-                market_cap = "N/A"
-
-            try:
-                volume_element = soup.find('td', text='Volume')
-                if volume_element:
-                    volume = volume_element.find_next('td').text.strip()
-            except AttributeError:
-                volume = "0"
+            for row in soup.find_all('tr'):
+                header = row.find('td', string='Market Cap').text if row.find('td', string='Market Cap') else None
+                value = row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}).text if row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'}) else None
+                
+                if header and value:
+                    if 'Market Cap' in header:
+                        market_cap = value
+                    elif 'Volume' in header:
+                        volume = value
 
             # Validate and parse extracted data
             return {
@@ -128,15 +119,12 @@ if __name__ == '__main__':
     ]
     stockdata = []
 
-    # Scrape data for each symbol with delay to avoid rate limiting
+    # Scrape data for each symbol
     for symbol in mycrypto:
         data = get_crypto_data(symbol)
         if data:
             stockdata.append(data)
-        time.sleep(2)  # Add delay to avoid being blocked
 
     # Insert scraped data into the database
     insert_data_into_database(engine, stockdata)
     print("Data extraction and insertion completed.")
-
-
