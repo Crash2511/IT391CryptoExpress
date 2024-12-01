@@ -22,9 +22,17 @@ class CryptoInformation(Base):
     price = Column(DECIMAL(20, 10), nullable=False, default=Decimal('0.0000000000'))  # High precision for price
     price_change = Column(DECIMAL(20, 10), nullable=False, default=Decimal('0.0000000000'))  # High precision
     change_percent = Column(DECIMAL(10, 2), nullable=False, default=Decimal('0.00'))
+    previous_close = Column(String(50), nullable=True, default="N/A")  # Handles blanks like '--'
+    open = Column(String(50), nullable=True, default="N/A")
+    price_low = Column(DECIMAL(20, 10), nullable=True, default=Decimal('0.0000000000'))
+    price_high = Column(DECIMAL(20, 10), nullable=True, default=Decimal('0.0000000000'))
     market_cap = Column(String(50), nullable=False, default="N/A")
-    volume = Column(DECIMAL(20, 2), nullable=False, default=Decimal('0.00'))
     circulating_supply = Column(DECIMAL(20, 2), nullable=False, default=Decimal('0.00'))
+    volume = Column(DECIMAL(20, 2), nullable=False, default=Decimal('0.00'))
+    volume_24hr = Column(DECIMAL(20, 2), nullable=False, default=Decimal('0.00'))
+    algorithm = Column(String(50), nullable=True, default="N/A")  # Placeholder for blank values
+    max_supply = Column(String(50), nullable=True, default="N/A")
+    volume_24hr_all_currencies = Column(String(50), nullable=True, default="N/A")
     trade_time = Column(TIMESTAMP)
 
 # Function to connect to the database
@@ -51,73 +59,92 @@ def get_crypto_data(symbol, retries=3):
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
 
-                # Fetch price
+                # Fetch top-level price and percent change
                 price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
                 price = Decimal(price_element.text.replace(',', '').strip()) if price_element else Decimal('0.0000000000')
 
-                # Fetch price change
-                price_change_element = soup.find('fin-streamer', {'data-field': 'regularMarketChange'})
-                price_change_text = price_change_element.text if price_change_element else "0.00"
-                price_change_text = re.sub(r'[^\d.-]', '', price_change_text)
-                price_change = Decimal(price_change_text) if price_change_text else Decimal('0.0000000000')
+                price_change_element = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
+                price_change = Decimal(re.sub(r'[^\d.-]', '', price_change_element.text)) if price_change_element else Decimal('0.00')
 
-                # Fetch percent change
-                change_percent_element = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
-                change_percent_text = change_percent_element.text if change_percent_element else "0.00%"
-                change_percent_text = re.sub(r'[^\d.-]', '', change_percent_text)
-                change_percent = Decimal(change_percent_text) if change_percent_text else Decimal('0.00')
-
-                # Initialize market_cap, circulating_supply, volume, price_high, price_low
+                # Initialize mid-page values
+                previous_close = "N/A"
+                open_price = "N/A"
+                price_low = Decimal('0.00')
+                price_high = Decimal('0.00')
                 market_cap = "N/A"
                 circulating_supply = Decimal('0.00')
                 volume = Decimal('0.00')
-                price_high = Decimal('0.00')
-                price_low = Decimal('0.00')
+                volume_24hr = Decimal('0.00')
+                algorithm = "N/A"
+                max_supply = "N/A"
+                volume_24hr_all_currencies = "N/A"
 
-                # Parse the summary table for Market Cap, Circulating Supply, and Volume
-                summary_section = soup.find('div', {'data-test': 'summary-table'})  # Target summary table
-                if summary_section:
-                    rows = summary_section.find_all('tr')
+                # Parse the mid-page columns
+                summary_table = soup.find('div', {'data-test': 'summary-table'})  # Locate summary table
+                if summary_table:
+                    rows = summary_table.find_all('tr')
                     for row in rows:
-                        # Left: Label, Right: Value
                         header = row.find('td', {'class': 'C($primaryColor)'})
                         value = row.find('td', {'class': 'Ta(end)'})
                         if header and value:
                             header_text = header.text.strip()
                             value_text = value.text.strip()
-                            # Map values based on the updated top-to-bottom order
-                            if 'Market Cap' in header_text:
-                                market_cap = value_text
-                            elif 'Circulating Supply' in header_text:
-                                circulating_supply = convert_to_decimal(value_text)
-                            elif 'Volume' in header_text:
-                                volume = convert_to_decimal(value_text)
 
-                # Parse the high and low price from a different section
-                price_range_section = soup.find('td', string="Day's Range")
-                if price_range_section:
-                    price_range_value = price_range_section.find_next('td').text
-                    if '-' in price_range_value:
-                        price_low_text, price_high_text = price_range_value.split('-')
-                        price_low = Decimal(price_low_text.strip().replace(',', ''))
-                        price_high = Decimal(price_high_text.strip().replace(',', ''))
+                            # Column 1
+                            if 'Previous Close' in header_text:
+                                previous_close = value_text if value_text != '--' else "N/A"
+                            elif 'Open' in header_text:
+                                open_price = value_text if value_text != '--' else "N/A"
+                            elif "Day's Range" in header_text:
+                                if '-' in value_text:
+                                    low, high = value_text.split('-')
+                                    price_low = Decimal(low.replace(',', '').strip()) if low.strip() != '--' else Decimal('0.00')
+                                    price_high = Decimal(high.replace(',', '').strip()) if high.strip() != '--' else Decimal('0.00')
+                            
+                            # Column 2
+                            elif 'Algorithm' in header_text:
+                                algorithm = value_text if value_text != '--' else "N/A"
+                            elif 'Max Supply' in header_text:
+                                max_supply = value_text if value_text != '--' else "N/A"
+
+                            # Column 3
+                            elif 'Market Cap' in header_text:
+                                market_cap = value_text if value_text != '--' else "N/A"
+                            elif 'Circulating Supply' in header_text:
+                                circulating_supply = convert_to_decimal(value_text) if value_text != '--' else Decimal('0.00')
+                            
+                            # Column 4
+                            elif 'Volume' in header_text and '24 Hr' not in header_text:
+                                volume = convert_to_decimal(value_text) if value_text != '--' else Decimal('0.00')
+                            elif 'Volume 24 Hr' in header_text and 'All Currencies' not in header_text:
+                                volume_24hr = convert_to_decimal(value_text) if value_text != '--' else Decimal('0.00')
+                            elif 'Volume 24 Hr (All Currencies)' in header_text:
+                                volume_24hr_all_currencies = value_text if value_text != '--' else "N/A"
 
                 # Log extracted data
                 logging.info(f"Extracted data for {symbol}: "
-                             f"Price={price}, Market Cap={market_cap}, Volume={volume}, "
-                             f"Circulating Supply={circulating_supply}, Price High={price_high}, Price Low={price_low}")
+                             f"Price={price}, Previous Close={previous_close}, Open={open_price}, "
+                             f"Price Low={price_low}, Price High={price_high}, Market Cap={market_cap}, "
+                             f"Circulating Supply={circulating_supply}, Volume={volume}, "
+                             f"Volume 24 Hr={volume_24hr}, Algorithm={algorithm}, "
+                             f"Max Supply={max_supply}, Volume (All Currencies)={volume_24hr_all_currencies}")
 
                 return {
                     'name': symbol,
                     'name_abreviation': symbol.split('-')[0],
                     'price': price,
                     'price_change': price_change,
-                    'change_percent': change_percent,
-                    'market_cap': market_cap,
-                    'volume': volume,
-                    'circulating_supply': circulating_supply,
-                    'price_high': price_high,
+                    'previous_close': previous_close,
+                    'open': open_price,
                     'price_low': price_low,
+                    'price_high': price_high,
+                    'market_cap': market_cap,
+                    'circulating_supply': circulating_supply,
+                    'volume': volume,
+                    'volume_24hr': volume_24hr,
+                    'algorithm': algorithm,
+                    'max_supply': max_supply,
+                    'volume_24hr_all_currencies': volume_24hr_all_currencies,
                     'trade_time': datetime.now(timezone.utc)
                 }
             else:
@@ -130,19 +157,6 @@ def get_crypto_data(symbol, retries=3):
             time.sleep(2)
     return None
 
-# Function to convert text with suffixes like T/B/M into Decimal
-def convert_to_decimal(value_text):
-    value_text = value_text.replace(',', '').strip()
-    if 'T' in value_text:
-        return Decimal(value_text.replace('T', '')) * Decimal(1e12)
-    elif 'B' in value_text:
-        return Decimal(value_text.replace('B', '')) * Decimal(1e9)
-    elif 'M' in value_text:
-        return Decimal(value_text.replace('M', '')) * Decimal(1e6)
-    try:
-        return Decimal(value_text)
-    except:
-        return Decimal('0.00')
 
 # Function to convert text with suffixes like T/B/M into Decimal
 def convert_to_decimal(value_text):
@@ -158,7 +172,7 @@ def convert_to_decimal(value_text):
     except:
         return Decimal('0.00')
 
-# Function to insert data into the database
+
 def insert_data_into_database(engine, data):
     if engine is None:
         return
@@ -182,6 +196,7 @@ def insert_data_into_database(engine, data):
     finally:
         session.close()
 
+
 # Main script
 if __name__ == '__main__':
     db_url = 'mysql+pymysql://user:password@localhost/crypto_express'
@@ -190,16 +205,8 @@ if __name__ == '__main__':
     if engine is None:
         exit("Failed to connect to database. Exiting.")
 
-    # List of cryptocurrency symbols to scrape
-    mycrypto = [
-        'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 'USDC-USD',
-        'ADA-USD', 'SHIB-USD', 'AVAX-USD', 'TRX-USD', 'TON-USD', 'WBTC-USD', 'XLM-USD', 'DOT-USD',
-        'LINK-USD', 'BCH-USD', 'SUI-USD', 'PEPE-USD', 'NEAR-USD', 'LTC-USD', 'LEO-USD', 'UNI-USD',
-        'HBAR-USD', 'APT-USD', 'ICP-USD', 'DAI-USD', 'CRO-USD', 'ETC-USD', 'POL-USD', 'TAO-USD',
-        'RENDER-USD', 'FET-USD', 'KAS-USD', 'FIL-USD', 'ALGO-USD', 'ARB-USD', 'VET-USD', 'STX-USD',
-        'TIA-USD', 'BONK-USD', 'IMX-USD', 'ATOM-USD', 'WBT-USD', 'WIF-USD', 'OKB-USD', 'OM-USD',
-        'MNT-USD', 'OP-USD'
-    ]
+    # Smaller list for testing
+    mycrypto = ['BTC-USD', 'ETH-USD', 'SOL-USD']
     stockdata = []
 
     # Scrape data for each symbol
@@ -212,6 +219,7 @@ if __name__ == '__main__':
     insert_data_into_database(engine, stockdata)
 
     logging.info("Data scraping and insertion completed successfully.")
+
 
 
 
