@@ -5,8 +5,8 @@ session_start();
 // Database connection settings
 $servername = "localhost";
 $username = "user";
-$password = "password";
-$dbname = "crypto_simulator";
+$password = "Battle2511!";
+$dbname = "crypto_express";
 
 // Connect to the database
 $conn = new mysqli($servername, $username, $password, $dbname);
