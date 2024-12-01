@@ -5,6 +5,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 import re
 from datetime import datetime, timezone
 import time
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Updated to comply with SQLAlchemy 2.0
 Base = declarative_base()
@@ -30,63 +34,70 @@ def connect_to_database(db_url):
         Base.metadata.create_all(engine)
         return engine
     except Exception as e:
-        print(f"Error connecting to database: {e}")
+        logging.error(f"Error connecting to database: {e}")
         return None
 
 # Function to scrape Yahoo Finance for given cryptocurrency symbols
-# Added import statement for requests to avoid NameError
-def get_crypto_data(symbol):
+# Added retry mechanism and increased timeout
+def get_crypto_data(symbol, retries=3):
     import requests
     url = f'https://finance.yahoo.com/quote/{symbol}'
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"
     }
-    try:
-        r = requests.get(url, headers=headers)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
-            
-            # Fetch price-related fields using updated CSS selectors
-            price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
-            price = float(price_element.text.replace(',', '')) if price_element else 0.00
+    attempt = 0
+    while attempt < retries:
+        try:
+            logging.info(f"Fetching data for {symbol}, attempt {attempt + 1}")
+            r = requests.get(url, headers=headers, timeout=10)
+            if r.status_code == 200:
+                soup = BeautifulSoup(r.text, 'html.parser')
+                
+                # Fetch price-related fields using updated CSS selectors
+                price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
+                price = float(price_element.text.replace(',', '')) if price_element else 0.00
 
-            # Additional fields with improved error handling and more robust parsing
-            market_cap = "N/A"
-            volume = "0"
+                # Additional fields with improved error handling and more robust parsing
+                market_cap = "N/A"
+                volume = "0"
 
-            # Try different ways to find market cap and volume
-            try:
-                market_cap_element = soup.find('td', string=re.compile(r'Market Cap', re.IGNORECASE))
-                if market_cap_element:
-                    market_cap = market_cap_element.find_next('td').text.strip()
-            except Exception as e:
-                print(f"Error finding market cap for {symbol}: {e}")
+                # Try different ways to find market cap and volume
+                try:
+                    market_cap_element = soup.find('td', string=re.compile(r'Market Cap', re.IGNORECASE))
+                    if market_cap_element:
+                        market_cap = market_cap_element.find_next('td').text.strip()
+                except Exception as e:
+                    logging.warning(f"Error finding market cap for {symbol}: {e}")
 
-            try:
-                volume_element = soup.find('td', string=re.compile(r'Volume', re.IGNORECASE))
-                if volume_element:
-                    volume = volume_element.find_next('td').text.strip()
-            except Exception as e:
-                print(f"Error finding volume for {symbol}: {e}")
+                try:
+                    volume_element = soup.find('td', string=re.compile(r'Volume', re.IGNORECASE))
+                    if volume_element:
+                        volume = volume_element.find_next('td').text.strip()
+                except Exception as e:
+                    logging.warning(f"Error finding volume for {symbol}: {e}")
 
-            # Validate and parse extracted data
-            return {
-                'name': symbol,
-                'name_abreviation': symbol.split('-')[0],
-                'price': price,
-                'market_cap': market_cap,
-                'volume': float(re.sub('[^0-9.]', '', volume)) if volume else 0.00,
-                'trade_time': datetime.now(timezone.utc)
-            }
-        else:
-            print(f"Failed to fetch data for {symbol}: HTTP {r.status_code}")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Network error getting data for {symbol}: {e}")
-        return None
-    except Exception as e:
-        print(f"Error getting data for {symbol}: {e}")
-        return None
+                # Validate and parse extracted data
+                return {
+                    'name': symbol,
+                    'name_abreviation': symbol.split('-')[0],
+                    'price': price,
+                    'market_cap': market_cap,
+                    'volume': float(re.sub('[^0-9.]', '', volume)) if volume else 0.00,
+                    'trade_time': datetime.now(timezone.utc)
+                }
+            else:
+                logging.error(f"Failed to fetch data for {symbol}: HTTP {r.status_code}")
+                attempt += 1
+                time.sleep(2)
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Network error getting data for {symbol}, attempt {attempt + 1}: {e}")
+            attempt += 1
+            time.sleep(2)
+        except Exception as e:
+            logging.error(f"Error getting data for {symbol}, attempt {attempt + 1}: {e}")
+            attempt += 1
+            time.sleep(2)
+    return None
 
 # Function to insert data into the database
 def insert_data_into_database(engine, data):
@@ -107,7 +118,7 @@ def insert_data_into_database(engine, data):
                 session.add(CryptoInformation(**item))
         session.commit()
     except Exception as e:
-        print(f"Error inserting data: {e}")
+        logging.error(f"Error inserting data: {e}")
         session.rollback()
     finally:
         session.close()
@@ -141,4 +152,4 @@ if __name__ == '__main__':
 
     # Insert scraped data into the database
     insert_data_into_database(engine, stockdata)
-    print("Data extraction and insertion completed.")
+    logging.info("Data extraction and insertion completed.")
