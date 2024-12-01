@@ -14,8 +14,6 @@ class CryptoInformation(Base):
     name = Column(String(50), primary_key=True, nullable=False)
     name_abreviation = Column(String(10), nullable=False)
     price = Column(DECIMAL(10, 2), nullable=False, default=0.00)
-    price_change = Column(DECIMAL(10, 2), nullable=False, default=0.00)
-    change_percent = Column(DECIMAL(5, 2), nullable=False, default=0.00)
     market_cap = Column(String(20), nullable=False, default="0")
     volume = Column(DECIMAL(20, 2), nullable=False, default=0.00)
     circulating_supply = Column(DECIMAL(20, 2), nullable=False, default=0.00)
@@ -42,33 +40,26 @@ def get_crypto_data(symbol):
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, 'html.parser')
             
-            # Fetch price-related fields
-            price = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketPrice'})
-            price_change = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketChange'})
-            change_percent = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketChangePercent'})
+            # Fetch price-related fields using updated CSS selectors
+            price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
+            price = float(price_element.text.replace(',', '')) if price_element else 0.00
 
             # Additional fields with improved error handling
-            market_cap_element = soup.find(string=re.compile('Market Cap'))
+            market_cap_element = soup.find('td', string='Market Cap')
             market_cap = market_cap_element.find_next('td').text if market_cap_element else "N/A"
 
-            volume_element = soup.find(string=re.compile('Volume'))
+            volume_element = soup.find('td', string='Volume')
             volume = volume_element.find_next('td').text if volume_element else "0"
             
             # Validate and parse extracted data
-            if price and price_change and change_percent:
-                return {
-                    'name': symbol,
-                    'name_abreviation': symbol.split('-')[0],
-                    'price': float(price.text.replace(',', '')) if price else 0.00,
-                    'price_change': float(price_change.text.replace(',', '')) if price_change else 0.00,
-                    'change_percent': float(change_percent.text.replace('%', '').replace(',', '')) if change_percent else 0.00,
-                    'market_cap': market_cap,
-                    'volume': float(re.sub('[^0-9.]', '', volume)) if volume else 0.00,
-                    'trade_time': datetime.datetime.utcnow()
-                }
-            else:
-                print(f"Missing critical data for {symbol}")
-                return None
+            return {
+                'name': symbol,
+                'name_abreviation': symbol.split('-')[0],
+                'price': price,
+                'market_cap': market_cap,
+                'volume': float(re.sub('[^0-9.]', '', volume)) if volume else 0.00,
+                'trade_time': datetime.datetime.utcnow()
+            }
         else:
             print(f"Failed to fetch data for {symbol}: HTTP {r.status_code}")
             return None
