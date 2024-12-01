@@ -1,41 +1,3 @@
-import requests
-from bs4 import BeautifulSoup
-from sqlalchemy import create_engine, Column, String, DECIMAL, TIMESTAMP
-from sqlalchemy.orm import declarative_base, sessionmaker
-from datetime import datetime, timezone
-import time
-import logging
-import re
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Updated to comply with SQLAlchemy 2.0
-Base = declarative_base()
-
-# Database Model
-class CryptoInformation(Base):
-    __tablename__ = 'crypto_information'
-    name = Column(String(50), primary_key=True, nullable=False)
-    name_abreviation = Column(String(10), nullable=False)
-    price = Column(DECIMAL(20, 10), nullable=False, default=0.00)  # Increased precision
-    price_change = Column(DECIMAL(20, 10), nullable=False, default=0.00)  # Increased precision
-    change_percent = Column(DECIMAL(10, 2), nullable=False, default=0.00)
-    market_cap = Column(String(20), nullable=False, default="0")
-    volume = Column(DECIMAL(20, 2), nullable=False, default=0.00)
-    circulating_supply = Column(DECIMAL(20, 2), nullable=False, default=0.00)
-    trade_time = Column(TIMESTAMP)
-
-# Function to connect to the database
-def connect_to_database(db_url):
-    try:
-        engine = create_engine(db_url, pool_size=5, echo=False)
-        Base.metadata.create_all(engine)
-        return engine
-    except Exception as e:
-        logging.error(f"Error connecting to database: {e}")
-        return None
-
 def get_crypto_data(symbol, retries=3):
     url = f'https://finance.yahoo.com/quote/{symbol}'
     headers = {
@@ -51,50 +13,45 @@ def get_crypto_data(symbol, retries=3):
 
                 # Fetch price
                 price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
-                price = float(price_element.text.replace(',', '').strip()) if price_element else 0.00
+                price = Decimal(price_element.text.replace(',', '').strip()) if price_element else Decimal('0.0000000000')
 
                 # Fetch price change
                 price_change_element = soup.find('fin-streamer', {'data-field': 'regularMarketChange'})
                 price_change_text = price_change_element.text if price_change_element else "0.00"
                 price_change_text = re.sub(r'[^\d.-]', '', price_change_text)
-                price_change = float(price_change_text) if price_change_text else 0.00
+                price_change = Decimal(price_change_text) if price_change_text else Decimal('0.0000000000')
 
                 # Fetch percent change
                 change_percent_element = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
                 change_percent_text = change_percent_element.text if change_percent_element else "0.00%"
                 change_percent_text = re.sub(r'[^\d.-]', '', change_percent_text)
-                change_percent = float(change_percent_text) if change_percent_text else 0.00
+                change_percent = Decimal(change_percent_text) if change_percent_text else Decimal('0.00')
 
                 # Initialize market_cap, volume, circulating_supply
                 market_cap = "N/A"
-                volume = 0.00
-                circulating_supply = 0.00
+                volume = Decimal('0.00')
+                circulating_supply = Decimal('0.00')
 
-                # Extract stats from table
-                stats_table = soup.find_all('tr')
-                for row in stats_table:
-                    header = row.find('td', {'class': 'C($primaryColor) W(51%)'})
-                    value = row.find('td', {'class': 'Ta(end) Fw(600) Lh(14px)'})
-                    if header and value:
-                        header_text = header.text.strip()
-                        value_text = value.text.strip()
-
-                        if 'Market Cap' in header_text:
-                            market_cap = value_text
-                        elif 'Volume' in header_text and '24hr' not in header_text:
-                            volume_text = value_text.replace(',', '').replace('T', 'e12').replace('B', 'e9').replace('M', 'e6')
-                            try:
-                                volume = float(volume_text)
-                            except ValueError:
-                                logging.warning(f"Could not parse volume for {symbol}: {value_text}")
-                                volume = 0.00
-                        elif 'Circulating Supply' in header_text:
-                            circulating_supply_text = value_text.replace(',', '').replace('T', 'e12').replace('B', 'e9').replace('M', 'e6')
-                            try:
-                                circulating_supply = float(circulating_supply_text)
-                            except ValueError:
-                                logging.warning(f"Could not parse circulating supply for {symbol}: {value_text}")
-                                circulating_supply = 0.00
+                # Fetch alternative fields for market cap and others
+                summary_table = soup.find_all('div', {'data-test': 'summary-table'})
+                if summary_table:
+                    for div in summary_table:
+                        try:
+                            rows = div.find_all('tr')
+                            for row in rows:
+                                header = row.find('td', {'class': 'C($primaryColor)'})
+                                value = row.find('td', {'class': 'Ta(end)'})
+                                if header and value:
+                                    header_text = header.text.strip()
+                                    value_text = value.text.strip()
+                                    if 'Market Cap' in header_text:
+                                        market_cap = value_text
+                                    elif 'Volume' in header_text and '24hr' not in header_text:
+                                        volume = convert_to_decimal(value_text)
+                                    elif 'Circulating Supply' in header_text:
+                                        circulating_supply = convert_to_decimal(value_text)
+                        except Exception as e:
+                            logging.warning(f"Error parsing summary table for {symbol}: {e}")
 
                 return {
                     'name': symbol,
@@ -117,63 +74,19 @@ def get_crypto_data(symbol, retries=3):
             time.sleep(2)
     return None
 
-# Function to insert data into the database
-def insert_data_into_database(engine, data):
-    if engine is None:
-        return
-
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
+# Function to convert text with suffixes like T/B/M into Decimal
+def convert_to_decimal(value_text):
+    value_text = value_text.replace(',', '').strip()
+    if 'T' in value_text:
+        return Decimal(value_text.replace('T', '')) * Decimal(1e12)
+    elif 'B' in value_text:
+        return Decimal(value_text.replace('B', '')) * Decimal(1e9)
+    elif 'M' in value_text:
+        return Decimal(value_text.replace('M', '')) * Decimal(1e6)
     try:
-        # Update existing records or insert new ones
-        for item in data:
-            existing = session.query(CryptoInformation).filter_by(name=item['name']).first()
-            if existing:
-                for key, value in item.items():
-                    setattr(existing, key, value)
-            else:
-                session.add(CryptoInformation(**item))
-        session.commit()
-    except Exception as e:
-        logging.error(f"Error inserting data: {e}")
-        session.rollback()
-    finally:
-        session.close()
-
-# Main script
-if __name__ == '__main__':
-    db_url = 'mysql+pymysql://user:IT391!@localhost/crypto_express'
-    engine = connect_to_database(db_url)
-
-    if engine is None:
-        exit("Failed to connect to database. Exiting.")
-
-    # List of cryptocurrency symbols to scrape
-    mycrypto = [
-        'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 'USDC-USD',
-        'ADA-USD', 'SHIB-USD', 'AVAX-USD', 'TRX-USD', 'TON-USD', 'WBTC-USD', 'XLM-USD', 'DOT-USD',
-        'LINK-USD', 'BCH-USD', 'SUI-USD', 'PEPE-USD', 'NEAR-USD', 'LTC-USD', 'LEO-USD', 'UNI-USD',
-        'HBAR-USD', 'APT-USD', 'ICP-USD', 'DAI-USD', 'CRO-USD', 'ETC-USD', 'POL-USD', 'TAO-USD',
-        'RENDER-USD', 'FET-USD', 'KAS-USD', 'FIL-USD', 'ALGO-USD', 'ARB-USD', 'VET-USD', 'STX-USD',
-        'TIA-USD', 'BONK-USD', 'IMX-USD', 'ATOM-USD', 'WBT-USD', 'WIF-USD', 'OKB-USD', 'OM-USD',
-        'MNT-USD', 'OP-USD'
-    ]
-    stockdata = []
-
-    # Scrape data for each symbol
-    for symbol in mycrypto:
-        data = get_crypto_data(symbol)
-        if data:
-            stockdata.append(data)
-
-    # Insert scraped data into the
-    insert_data_into_database(engine, stockdata)
-
-    logging.info("Data scraping and insertion completed successfully.")
-
-
-
+        return Decimal(value_text)
+    except:
+        return Decimal('0.00')
 
 
 
