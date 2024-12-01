@@ -18,6 +18,8 @@ class CryptoInformation(Base):
     name = Column(String(50), primary_key=True, nullable=False)
     name_abreviation = Column(String(10), nullable=False)
     price = Column(DECIMAL(10, 2), nullable=False, default=0.00)
+    price_change = Column(DECIMAL(10, 2), nullable=False, default=0.00)
+    change_percent = Column(DECIMAL(5, 2), nullable=False, default=0.00)
     market_cap = Column(String(20), nullable=False, default="0")
     volume = Column(DECIMAL(20, 2), nullable=False, default=0.00)
     circulating_supply = Column(DECIMAL(20, 2), nullable=False, default=0.00)
@@ -52,6 +54,12 @@ def get_crypto_data(symbol, retries=3):
                 price_element = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
                 price = float(price_element.text.replace(',', '')) if price_element else 0.00
 
+                price_change_element = soup.find('fin-streamer', {'data-field': 'regularMarketChange'})
+                price_change = float(price_change_element.text.replace(',', '')) if price_change_element else 0.00
+
+                change_percent_element = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
+                change_percent = float(change_percent_element.text.replace('%', '').replace(',', '')) if change_percent_element else 0.00
+
                 # Fetch market cap, volume, and circulating supply
                 market_cap = "N/A"
                 volume = "0"
@@ -76,6 +84,8 @@ def get_crypto_data(symbol, retries=3):
                     'name': symbol,
                     'name_abreviation': symbol.split('-')[0],
                     'price': price,
+                    'price_change': price_change,
+                    'change_percent': change_percent,
                     'market_cap': market_cap,
                     'volume': float(volume.replace(',', '').replace('B', '')) if volume else 0.00,
                     'circulating_supply': float(circulating_supply.replace(',', '').replace('M', '')) if circulating_supply else 0.00,
@@ -128,12 +138,15 @@ if __name__ == '__main__':
         exit("Failed to connect to database. Exiting.")
 
     # List of cryptocurrency symbols to scrape
-mycrypto = [ 'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 
-            'USDC-USD', 'ADA-USD', 'SHIB-USD', 'AVAX-USD', 'TRX-USD', 'TON-USD', 'WBTC-USD', 
-            'XLM-USD', 'DOT-USD', 'LINK-USD', 'BCH-USD', 'SUI-USD', 'PEPE-USD', 'NEAR-USD', 'LTC-USD',
-            'LEO-USD', 'UNI-USD', 'HBAR-USD', 'APT-USD', 'ICP-USD', 'DAI-USD', 'CRO-USD', 'ETC-USD', 
-            'POL-USD', 'TAO-USD', 'RENDER-USD', 'FET-USD', 'KAS-USD', 'FIL-USD', 'ALGO-USD', 'ARB-USD',
-            'VET-USD', 'STX-USD', 'TIA-USD', 'BONK-USD', 'IMX-USD', 'ATOM-USD', 'WBT-USD', 'WIF-USD', 'OKB-USD', 'OM-USD', 'MNT-USD', 'OP-USD' ]
+    mycrypto = [
+        'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 'USDC-USD',
+        'ADA-USD', 'SHIB-USD', 'AVAX-USD', 'TRX-USD', 'TON-USD', 'WBTC-USD', 'XLM-USD', 'DOT-USD',
+        'LINK-USD', 'BCH-USD', 'SUI-USD', 'PEPE-USD', 'NEAR-USD', 'LTC-USD', 'LEO-USD', 'UNI-USD',
+        'HBAR-USD', 'APT-USD', 'ICP-USD', 'DAI-USD', 'CRO-USD', 'ETC-USD', 'POL-USD', 'TAO-USD',
+        'RENDER-USD', 'FET-USD', 'KAS-USD', 'FIL-USD', 'ALGO-USD', 'ARB-USD', 'VET-USD', 'STX-USD',
+        'TIA-USD', 'BONK-USD', 'IMX-USD', 'ATOM-USD', 'WBT-USD', 'WIF-USD', 'OKB-USD', 'OM-USD',
+        'MNT-USD', 'OP-USD'
+    ]
     stockdata = []
 
     # Scrape data for each symbol with delay to avoid rate limiting
@@ -146,4 +159,5 @@ mycrypto = [ 'BTC-USD', 'ETH-USD', 'USDT-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 
     # Insert scraped data into the database
     insert_data_into_database(engine, stockdata)
     logging.info("Data extraction and insertion completed.")
+
 
