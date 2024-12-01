@@ -67,44 +67,45 @@ def get_crypto_data(symbol, retries=3):
                 change_percent_text = re.sub(r'[^\d.-]', '', change_percent_text)
                 change_percent = Decimal(change_percent_text) if change_percent_text else Decimal('0.00')
 
-                # Initialize market_cap, volume, circulating_supply
+                # Initialize market_cap, circulating_supply, volume, price_high, price_low
                 market_cap = "N/A"
-                volume = Decimal('0.00')
                 circulating_supply = Decimal('0.00')
+                volume = Decimal('0.00')
+                price_high = Decimal('0.00')
+                price_low = Decimal('0.00')
 
-                # Find the table with market cap and other values
-                stats_table = soup.find('section', {'data-test': 'qsp-statistics'})  # Updated selector for stats table
-                if stats_table:
-                    rows = stats_table.find_all('tr')
+                # Parse the summary table for Market Cap, Circulating Supply, and Volume
+                summary_section = soup.find('div', {'data-test': 'summary-table'})  # Target summary table
+                if summary_section:
+                    rows = summary_section.find_all('tr')
                     for row in rows:
-                        header = row.find('span')
-                        value = row.find('td', {'class': 'Ta(end)'})
-                        if header and value:
-                            header_text = header.text.strip()
-                            value_text = value.text.strip()
-                            if 'Market Cap' in header_text:
-                                market_cap = value_text
-                            elif 'Volume' in header_text and '24hr' not in header_text:
-                                volume = convert_to_decimal(value_text)
-                            elif 'Circulating Supply' in header_text:
-                                circulating_supply = convert_to_decimal(value_text)
-
-                # Fallback: Check the secondary data block under the main price info
-                fallback_table = soup.find('div', {'data-test': 'summary-table'})
-                if fallback_table:
-                    rows = fallback_table.find_all('tr')
-                    for row in rows:
+                        # Left: Label, Right: Value
                         header = row.find('td', {'class': 'C($primaryColor)'})
                         value = row.find('td', {'class': 'Ta(end)'})
                         if header and value:
                             header_text = header.text.strip()
                             value_text = value.text.strip()
+                            # Map values based on the updated top-to-bottom order
                             if 'Market Cap' in header_text:
                                 market_cap = value_text
-                            elif 'Volume' in header_text and '24hr' not in header_text:
-                                volume = convert_to_decimal(value_text)
                             elif 'Circulating Supply' in header_text:
                                 circulating_supply = convert_to_decimal(value_text)
+                            elif 'Volume' in header_text:
+                                volume = convert_to_decimal(value_text)
+
+                # Parse the high and low price from a different section
+                price_range_section = soup.find('td', string="Day's Range")
+                if price_range_section:
+                    price_range_value = price_range_section.find_next('td').text
+                    if '-' in price_range_value:
+                        price_low_text, price_high_text = price_range_value.split('-')
+                        price_low = Decimal(price_low_text.strip().replace(',', ''))
+                        price_high = Decimal(price_high_text.strip().replace(',', ''))
+
+                # Log extracted data
+                logging.info(f"Extracted data for {symbol}: "
+                             f"Price={price}, Market Cap={market_cap}, Volume={volume}, "
+                             f"Circulating Supply={circulating_supply}, Price High={price_high}, Price Low={price_low}")
 
                 return {
                     'name': symbol,
@@ -115,6 +116,8 @@ def get_crypto_data(symbol, retries=3):
                     'market_cap': market_cap,
                     'volume': volume,
                     'circulating_supply': circulating_supply,
+                    'price_high': price_high,
+                    'price_low': price_low,
                     'trade_time': datetime.now(timezone.utc)
                 }
             else:
@@ -126,6 +129,20 @@ def get_crypto_data(symbol, retries=3):
             attempt += 1
             time.sleep(2)
     return None
+
+# Function to convert text with suffixes like T/B/M into Decimal
+def convert_to_decimal(value_text):
+    value_text = value_text.replace(',', '').strip()
+    if 'T' in value_text:
+        return Decimal(value_text.replace('T', '')) * Decimal(1e12)
+    elif 'B' in value_text:
+        return Decimal(value_text.replace('B', '')) * Decimal(1e9)
+    elif 'M' in value_text:
+        return Decimal(value_text.replace('M', '')) * Decimal(1e6)
+    try:
+        return Decimal(value_text)
+    except:
+        return Decimal('0.00')
 
 # Function to convert text with suffixes like T/B/M into Decimal
 def convert_to_decimal(value_text):
