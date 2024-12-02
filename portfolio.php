@@ -25,7 +25,7 @@ if ($conn->connect_error) {
 }
 
 // Fetch portfolio data
-$sql = "SELECT name, name_abreviation, amount, price FROM portfolio_information INNER JOIN crypto_information ON portfolio_information.crypto_id = crypto_information.id WHERE user_id = ?";
+$sql = "SELECT crypto_information.name, crypto_information.name_abreviation, portfolio_information.amount, crypto_information.price FROM portfolio_information INNER JOIN crypto_information ON portfolio_information.crypto_id = crypto_information.name_abreviation WHERE portfolio_information.user_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Prepare failed: " . $conn->error);
@@ -43,7 +43,7 @@ if ($result->num_rows > 0) {
 $stmt->close();
 
 // Fetch trade history
-$sql = "SELECT crypto_information.name, crypto_information.name_abreviation, transaction_type, amount, price, timestamp FROM transaction_history INNER JOIN crypto_information ON transaction_history.crypto_id = crypto_information.id WHERE user_id = ? ORDER BY timestamp DESC";
+$sql = "SELECT crypto_information.name, crypto_information.name_abreviation, transaction_history.transaction_type, transaction_history.amount, transaction_history.price, transaction_history.timestamp FROM transaction_history INNER JOIN crypto_information ON transaction_history.crypto_id = crypto_information.name_abreviation WHERE transaction_history.user_id = ? ORDER BY transaction_history.timestamp DESC";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Prepare failed: " . $conn->error);
@@ -188,8 +188,5 @@ $conn->close();
     <footer>
         <p>&copy; 2024 Crypto Express</p>
     </footer>
-</body>
-</html>
-
 </body>
 </html>
