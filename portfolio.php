@@ -1,7 +1,13 @@
 <?php
 session_start();
 
-// Database connection
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    echo "<p>You need to log in to view your portfolio. Once you log in and have an account, this page will be filled with your portfolio data.</p>";
+    exit();
+}
+
+// Database connection settings
 $servername = "localhost";
 $username = "user";
 $password = "Battle2511!";
@@ -9,6 +15,7 @@ $dbname = "crypto_express";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
+// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -80,7 +87,6 @@ $conn->close();
             color: red;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
@@ -94,9 +100,7 @@ $conn->close();
                 <li><a href="settings.php">Settings</a></li>
             </ul>
             <ul class="nav-right">
-                <li><a href="login.php">Login</a></li>
-                <li><a href="register.php">Register</a></li>
-                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
+                <li><a href="logout.php">Logout</a></li>
             </ul>
         </nav>
     </header>
@@ -104,101 +108,75 @@ $conn->close();
     <main>
         <section id="portfolio">
             <h2>Your Portfolio (Detailed)</h2>
-            <table id="portfolio-table">
-                <thead>
-                    <tr>
-                        <th>Asset</th>
-                        <th class="amount">Amount</th>
-                        <th class="price">Price</th>
-                        <th class="value">Value</th>
-                    </tr>
-                </thead>
-                <tbody id="portfolio-list">
-                    <?php 
-                    $totalValue = 0;
-                    foreach ($portfolioData as $asset): 
-                        $assetValue = $asset['amount'] * $asset['price'];
-                        $totalValue += $assetValue;
-                    ?>
+            <?php if (empty($portfolioData)): ?>
+                <p>Your portfolio is currently empty. Once you start adding assets, they will appear here.</p>
+            <?php else: ?>
+                <table id="portfolio-table">
+                    <thead>
                         <tr>
-                            <td><?= htmlspecialchars($asset['name']) ?> (<?= htmlspecialchars($asset['name_abreviation']) ?>)</td>
-                            <td class="amount"><?= number_format($asset['amount'], 2) ?></td>
-                            <td class="price">$<?= number_format($asset['price'], 2) ?></td>
-                            <td class="value">$<?= number_format($assetValue, 2) ?></td>
+                            <th>Asset</th>
+                            <th class="amount">Amount</th>
+                            <th class="price">Price</th>
+                            <th class="value">Value</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-            <div id="portfolio-summary">
-                <h3>Total Portfolio Value: <span id="total-value" class="value">$<?= number_format($totalValue, 2) ?></span></h3>
-            </div>
+                    </thead>
+                    <tbody id="portfolio-list">
+                        <?php 
+                        $totalValue = 0;
+                        foreach ($portfolioData as $asset): 
+                            $assetValue = $asset['amount'] * $asset['price'];
+                            $totalValue += $assetValue;
+                        ?>
+                            <tr>
+                                <td><?= htmlspecialchars($asset['name']) ?> (<?= htmlspecialchars($asset['name_abreviation']) ?>)</td>
+                                <td class="amount"><?= number_format($asset['amount'], 2) ?></td>
+                                <td class="price">\$<?= number_format($asset['price'], 2) ?></td>
+                                <td class="value">\$<?= number_format($assetValue, 2) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <div id="portfolio-summary">
+                    <h3>Total Portfolio Value: <span id="total-value" class="value">\$<?= number_format($totalValue, 2) ?></span></h3>
+                </div>
+            <?php endif; ?>
         </section>
 
         <section id="last-trades">
             <h2>Last Trades</h2>
-            <table id="trades-table">
-                <thead>
-                    <tr>
-                        <th>Asset</th>
-                        <th>Action</th>
-                        <th class="amount">Amount</th>
-                        <th class="price">Price</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody id="trades-list">
-                    <?php foreach ($tradeData as $trade): ?>
+            <?php if (empty($tradeData)): ?>
+                <p>No trades found. Your trade history will be displayed here once you start trading.</p>
+            <?php else: ?>
+                <table id="trades-table">
+                    <thead>
                         <tr>
-                            <td><?= htmlspecialchars($trade['name']) ?> (<?= htmlspecialchars($trade['name_abreviation']) ?>)</td>
-                            <td class="<?= $trade['transaction_type'] === 'buy' ? 'buy-action' : 'sell-action' ?>">
-                                <?= ucfirst(htmlspecialchars($trade['transaction_type'])) ?>
-                            </td>
-                            <td class="amount"><?= number_format($trade['amount'], 2) ?></td>
-                            <td class="price">$<?= number_format($trade['price'], 2) ?></td>
-                            <td><?= htmlspecialchars($trade['timestamp']) ?></td>
+                            <th>Asset</th>
+                            <th>Action</th>
+                            <th class="amount">Amount</th>
+                            <th class="price">Price</th>
+                            <th>Date</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </section>
-
-        <section id="portfolio-graph">
-            <h2>Your Portfolio Performance</h2>
-            <canvas id="winsChart" width="300" height="150"></canvas>
+                    </thead>
+                    <tbody id="trades-list">
+                        <?php foreach ($tradeData as $trade): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($trade['name']) ?> (<?= htmlspecialchars($trade['name_abreviation']) ?>)</td>
+                                <td class="<?= $trade['transaction_type'] === 'buy' ? 'buy-action' : 'sell-action' ?>">
+                                    <?= ucfirst(htmlspecialchars($trade['transaction_type'])) ?>
+                                </td>
+                                <td class="amount"><?= number_format($trade['amount'], 2) ?></td>
+                                <td class="price">\$<?= number_format($trade['price'], 2) ?></td>
+                                <td><?= htmlspecialchars($trade['timestamp']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </section>
     </main>
 
     <footer>
         <p>&copy; 2024 Crypto Express</p>
     </footer>
-
-    <script>
-        const ctx = document.getElementById('winsChart').getContext('2d');
-        const winsChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-                datasets: [{
-                    label: 'Portfolio Value Over Time',
-                    data: [12000, 15000, 18000, 17000, 19000, 20000, 21000],
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Portfolio Performance Over Time'
-                    }
-                }
-            }
-        });
-    </script>
 </body>
 </html>
