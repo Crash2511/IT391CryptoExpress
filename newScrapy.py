@@ -1,30 +1,29 @@
 import yfinance as yf
 import mysql.connector
-import pandas as pd
+import time
+import datetime
 
+# MySQL database connection details
 mydb = mysql.connector.connect(
   host="    ",
-  user="     ",
-  password="  ",
-  database="    "
+  user="    ",
+  password="    ",
+  database="   "
 )
 
 mycursor = mydb.cursor()
+
+def fetch_and_insert(tickers):
+  data = yf.download(tickers=tickers, period='1m', interval='1m')
+  for index, row in data.iterrows():
+    for ticker in tickers:
+      sql = "INSERT INTO crypto_data (timestamp, ticker, price, change, percent_change) VALUES (%s, %s, %s, %s, %s)"
+      val = (index, ticker, row[ticker]['Close'], row[ticker]['Change'], row[ticker]['% Change'])
+      mycursor.execute(sql, val)
+      mydb.commit()
+
 tickers = ["BTC-USD", "ETH-USD", "SOL-USD", "DOGE-USD"]
 
-data = yf.download(tickers)
-
-data = data.reset_index()
-data['timestamp'] = data['Date'].astype(str)
-data = data[['timestamp', 'Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']]
-
-for index, row in data.iterrows():
-    sql = "INSERT INTO crypto_data (timestamp, Open, High, Low, Close, Adj_Close, Volume) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-    val = (row['timestamp'], row['Open'], row['High'], row['Low'], row['Close'], row['Adj Close'], row['Volume'])
-    mycursor.execute(sql, val)
-
-mydb.commit()
-print("Data inserted successfully!")
-
-mycursor.close()
-mydb.close()
+while True:
+  fetch_and_insert(tickers)
+  time.sleep(60)
