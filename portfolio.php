@@ -54,7 +54,11 @@ if (isset($_SESSION['user_id'])) {
         }
         $stmt->close();
     }
+} else {
+    // Message to display when user is not logged in
+    $message = "Your portfolio will not be filled until you log in and start using the website.";
 }
+
 $conn->close();
 ?>
 
@@ -82,21 +86,25 @@ $conn->close();
             background-color: #f4f4f4;
             font-weight: bold;
         }
-        .amount, .price, .value {
-            font-weight: bold;
-        }
-
-        /* Black bar at the bottom */
-        footer {
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
+        .message {
             text-align: center;
+            margin: 20px;
+            font-size: 1.2rem;
+            color: #e74c3c;
         }
-
-        footer a {
-            color: #fff;
-            text-decoration: none;
+        .chart-container {
+            width: 80%;
+            margin: 0 auto;
+        }
+        /* Footer styling */
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
         }
     </style>
 </head>
@@ -112,24 +120,25 @@ $conn->close();
                 <li><a href="settings.php">Settings</a></li>
             </ul>
             <ul class="nav-right">
-                <?php if (isset($_SESSION['user_id'])): ?>
-                    <li><a href="logout.php">Logout</a></li>
-                <?php else: ?>
-                    <li><a href="login.php">Login</a></li>
-                    <li><a href="register.php">Register</a></li>
-                <?php endif; ?>
+                <li><a href="login.php">Login</a></li>
+                <li><a href="register.php">Register</a></li>
+                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
 
     <main>
-        <h2>Your Portfolio</h2>
+        <section id="portfolio-overview">
+            <h2>Your Portfolio</h2>
+            <?php if (isset($message)) { ?>
+                <div class="message"><?php echo $message; ?></div>
+            <?php } ?>
 
-        <?php if (isset($_SESSION['user_id'])): ?>
+            <!-- Portfolio Table -->
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Crypto Name</th>
                         <th>Abbreviation</th>
                         <th>Amount</th>
                         <th>Price</th>
@@ -137,50 +146,55 @@ $conn->close();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($portfolioData as $crypto): ?>
+                    <?php foreach ($portfolioData as $item) { ?>
                         <tr>
-                            <td><?php echo $crypto['name']; ?></td>
-                            <td><?php echo $crypto['name_abreviation']; ?></td>
-                            <td><?php echo $crypto['amount']; ?></td>
-                            <td><?php echo $crypto['price']; ?></td>
-                            <td><?php echo $crypto['amount'] * $crypto['price']; ?></td>
+                            <td><?php echo $item['name']; ?></td>
+                            <td><?php echo $item['name_abreviation']; ?></td>
+                            <td><?php echo $item['amount']; ?></td>
+                            <td><?php echo "$" . number_format($item['price'], 2); ?></td>
+                            <td><?php echo "$" . number_format($item['amount'] * $item['price'], 2); ?></td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </tbody>
             </table>
 
-            <h3>Trade History</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Crypto</th>
-                        <th>Transaction Type</th>
-                        <th>Amount</th>
-                        <th>Price</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($tradeData as $trade): ?>
-                        <tr>
-                            <td><?php echo $trade['name']; ?></td>
-                            <td><?php echo $trade['transaction_type']; ?></td>
-                            <td><?php echo $trade['amount']; ?></td>
-                            <td><?php echo $trade['price']; ?></td>
-                            <td><?php echo $trade['timestamp']; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>Please <a href="login.php">login</a> to view your portfolio and trade history.</p>
-        <?php endif; ?>
+            <!-- Graph Section -->
+            <div class="chart-container">
+                <canvas id="cryptoChart"></canvas>
+            </div>
+
+            <script>
+                var ctx = document.getElementById('cryptoChart').getContext('2d');
+                var chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ["1d", "1m", "1y"],
+                        datasets: [{
+                            label: 'Crypto Price History',
+                            data: [/* Add your data here */],
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            </script>
+        </section>
     </main>
 
-    <!-- Footer with black bar and copyright symbol -->
+    <!-- Footer -->
     <footer>
-        <p>&copy; <?php echo date("Y"); ?> Crypto Express. All rights reserved.</p>
+        <p>&copy; 2024 Crypto Express. All rights reserved.</p>
     </footer>
 </body>
 </html>
+
 
