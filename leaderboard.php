@@ -1,6 +1,4 @@
 <?php
-session_start();
-
 // Database connection
 $servername = "localhost";
 $username = "user";
@@ -24,73 +22,32 @@ if ($result->num_rows > 0) {
     }
 }
 $conn->close();
-
-// Rank users by their account balance
-$rankedData = array_map(function($row, $index) {
-    $row['rank'] = $index + 1;
-    return $row;
-}, $leaderboardData, array_keys($leaderboardData));
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Navigation bar styles */
-        nav {
-            background-color: #343a40;
-            padding: 10px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-        }
-        
-        nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            justify-content: space-around;
-        }
-
-        nav ul li {
-            display: inline;
-        }
-
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-            padding: 10px;
-            font-size: 18px;
-        }
-
-        nav ul li a:hover {
-            background-color: #555;
-        }
-
         /* Leaderboard table styles */
         #leaderboard-table {
             width: 80%;
-            margin: 100px auto 20px; /* Adding top margin to avoid overlap with the nav bar */
+            margin: 0 auto;
             border-collapse: collapse;
         }
 
         #leaderboard-table th, #leaderboard-table td {
             padding: 15px;
             text-align: center;
-            cursor: pointer; /* Make headers clickable */
         }
 
         #leaderboard-table th {
             background-color: #343a40;
             color: white;
             text-transform: uppercase;
+            cursor: pointer; /* Make headers clickable */
         }
 
         #leaderboard-table tbody tr:nth-child(odd) {
@@ -127,10 +84,71 @@ $rankedData = array_map(function($row, $index) {
             text-align: center;
             margin-bottom: 20px;
         }
+
+        /* Style for buttons */
+        .action-buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .action-buttons button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .action-buttons button:hover {
+            background-color: #218838;
+        }
+
+        /* Navigation bar styles */
+        header nav {
+            background-color: #333;
+            padding: 15px;
+        }
+
+        header nav h1 a {
+            color: white;
+            text-decoration: none;
+            font-size: 24px;
+        }
+
+        .main-nav, .nav-right {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .main-nav li, .nav-right li {
+            display: inline;
+            margin-right: 20px;
+        }
+
+        .main-nav a, .nav-right a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        .main-nav a:hover, .nav-right a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
-    <!-- Header with Navigation Bar -->
     <header>
         <nav>
             <h1><a href="index.php">Crypto Express</a></h1>
@@ -149,34 +167,29 @@ $rankedData = array_map(function($row, $index) {
         </nav>
     </header>
 
+    <h2>Leaderboard - Crypto Express</h2>
+
     <!-- Leaderboard Table -->
-    <h2>Leaderboard</h2>
     <table id="leaderboard-table">
         <thead>
             <tr>
-                <th onclick="sortLeaderboard()">Rank</th>
                 <th>User ID</th>
                 <th>Account Balance</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($rankedData as $user) : ?>
-                <tr>
-                    <td><?php echo $user['rank']; ?></td>
-                    <td><?php echo $user['user_id']; ?></td>
-                    <td><?php echo $user['account_balance']; ?></td>
-                </tr>
+            <?php foreach ($leaderboardData as $index => $row): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($row['user_id']); ?></td>
+                <td><?php echo htmlspecialchars($row['account_balance']); ?></td>
+            </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 
-    <!-- JavaScript to reset ranks when clicking the Rank column -->
-    <script>
-        function sortLeaderboard() {
-            // Reload the page to reset ranks (this will clear the rank reset for simplicity)
-            window.location.reload();
-        }
-    </script>
+    <footer>
+        &copy; 2024 Crypto Express. All rights reserved.
+    </footer>
 </body>
 </html>
 
