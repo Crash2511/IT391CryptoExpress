@@ -23,6 +23,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $confirm_password = $_POST['confirm-password'];
     $email = $_POST['email'];
 
+    // Email details for sending confirmation
+    $sender_email = "cryptoExpress@gmail.com";
+    $sender_password = "your_gmail_app_password";
+    $smtp_host = "smtp.gmail.com";
+    $smtp_port = 587;
+
     // Check if passwords match
     if ($user_password != $confirm_password) {
         $error_message = "Passwords do not match. Please try again.";
@@ -46,9 +52,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bind_param("sss", $user_id, $hashed_password, $email);
 
             if ($stmt->execute()) {
-                // Registration successful, redirect to login page
-                header("Location: login.php");
-                exit();
+                // Send a confirmation email using PHPMailer
+                require 'PHPMailer/PHPMailerAutoload.php';
+                $mail = new PHPMailer;
+                $mail->isSMTP();
+                $mail->Host = $smtp_host;
+                $mail->SMTPAuth = true;
+                $mail->Username = $sender_email;
+                $mail->Password = $sender_password;
+                $mail->SMTPSecure = 'tls';
+                $mail->Port = $smtp_port;
+
+                $mail->setFrom($sender_email, 'Crypto Express');
+                $mail->addAddress($email);
+                $mail->Subject = "Welcome to Crypto Express!";
+                $mail->Body = "Hello $user_id,\n\nThank you for registering at Crypto Express. We are excited to have you on board!\n\n- The Crypto Express Team";
+
+                if ($mail->send()) {
+                    // Registration successful, redirect to login page
+                    header("Location: login.php");
+                    exit();
+                } else {
+                    $error_message = "Registration successful, but failed to send confirmation email.";
+                }
             } else {
                 $error_message = "Registration failed. Please try again.";
             }
@@ -151,4 +177,5 @@ $conn->close();
     </footer>
 </body>
 </html>
+
 
