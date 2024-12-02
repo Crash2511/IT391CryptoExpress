@@ -1,86 +1,3 @@
-<?php
-session_start();
-
-// Database connection
-$servername = "localhost";
-$username = "user";
-$password = "Battle2511!";
-$dbname = "crypto_express";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Fetch cryptocurrency data
-$sql = "SELECT name, name_abreviation, price FROM crypto_information ORDER BY name";
-$result = $conn->query($sql);
-$cryptoData = [];
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $cryptoData[] = $row;
-    }
-}
-
-// Handle Buy/Sell Actions
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $crypto_id = $_POST['crypto_id'];
-    $transaction_type = $_POST['transaction_type']; // 'buy' or 'sell'
-    $amount = $_POST['amount'];
-
-    // Fetch user's current portfolio for the selected cryptocurrency
-    $sql = "SELECT amount FROM portfolio_information WHERE user_id = ? AND crypto_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ss", $_SESSION['user_id'], $crypto_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user_crypto = $result->fetch_assoc();
-    $stmt->close();
-
-    // Process Buy Action
-    if ($transaction_type == 'buy') {
-        if ($amount > 0) {
-            // Update portfolio to add the bought crypto
-            if ($user_crypto) {
-                // If user already has this crypto, just update the amount
-                $new_amount = $user_crypto['amount'] + $amount;
-                $sql = "UPDATE portfolio_information SET amount = ? WHERE user_id = ? AND crypto_id = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("dss", $new_amount, $_SESSION['user_id'], $crypto_id);
-                $stmt->execute();
-                $stmt->close();
-            } else {
-                // If user doesn't have this crypto, insert new row
-                $sql = "INSERT INTO portfolio_information (user_id, crypto_id, amount) VALUES (?, ?, ?)";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("ssd", $_SESSION['user_id'], $crypto_id, $amount);
-                $stmt->execute();
-                $stmt->close();
-            }
-        }
-    }
-
-    // Process Sell Action
-    if ($transaction_type == 'sell' && $user_crypto) {
-        if ($user_crypto['amount'] >= $amount && $amount > 0) {
-            // Update portfolio to subtract the sold crypto
-            $new_amount = $user_crypto['amount'] - $amount;
-            $sql = "UPDATE portfolio_information SET amount = ? WHERE user_id = ? AND crypto_id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("dss", $new_amount, $_SESSION['user_id'], $crypto_id);
-            $stmt->execute();
-            $stmt->close();
-        } else {
-            echo "<p class='message'>Insufficient balance to sell.</p>";
-        }
-    }
-}
-
-$conn->close();
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -88,124 +5,204 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Basic styling for tables */
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .favorite-btn {
+            padding: 5px 10px;
+            background-color: #f1c40f;
+            border: none;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .favorite-btn.active {
+            background-color: #e67e22;
+        }
+
+        .search-container {
             margin: 20px 0;
+            text-align: center;
         }
-        th, td {
-            border: 1px solid #ddd;
+
+        #search-input {
             padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
-        .message {
-            text-align: center;
-            margin: 20px;
-            font-size: 1.2rem;
-            color: #e74c3c;
-        }
-        .chart-container {
             width: 80%;
-            margin: 0 auto;
+            margin-right: 10px;
         }
-        /* Footer styling */
-        footer {
-            background-color: #2c3e50;
-            color: white;
-            text-align: center;
+
+        #search-btn {
             padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
+            cursor: pointer;
         }
-        .crypto-table {
-            margin-top: 20px;
-            width: 100%;
-            text-align: center;
-        }
-        .crypto-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .crypto-table th, .crypto-table td {
+
+        /* Center-align and format prices */
+        .crypto-item {
+            margin: 20px 0;
+            padding: 10px;
             border: 1px solid #ddd;
-            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
         }
-        .crypto-table th {
-            background-color: #f4f4f4;
+
+        .crypto-item p {
+            font-size: 1em;
         }
-        .crypto-table td {
-            font-size: 1.1rem;
+
+        .crypto-details {
+            margin-top: 10px;
+        }
+
+        .action-btns {
+            margin-top: 10px;
+        }
+
+        .action-btns button {
+            margin: 0 5px;
         }
     </style>
 </head>
 <body>
-    <!-- Header with navigation -->
     <header>
         <nav>
-            <h1><a href="index.php">Crypto Express</a></h1>
+            <h1><a href="index.html">Crypto Express</a></h1>
             <ul class="main-nav">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="portfolio.php">Portfolio</a></li>
-                <li><a href="market.php">Market</a></li>
-                <li><a href="leaderboard.php">Leaderboard</a></li>
-                <li><a href="settings.php">Settings</a></li>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="market.html">Market</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="settings.html">Settings</a></li>
             </ul>
             <ul class="nav-right">
-                <li><a href="login.php">Login</a></li>
-                <li><a href="register.php">Register</a></li>
-                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
 
     <main>
-        <h2>Market Overview</h2>
-        <div class="crypto-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cryptocurrency</th>
-                        <th>Abbreviation</th>
-                        <th>Price (USD)</th>
-                        <th>Buy/Sell</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($cryptoData as $crypto): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($crypto['name']); ?></td>
-                        <td><?= htmlspecialchars($crypto['name_abreviation']); ?></td>
-                        <td>$<?= number_format($crypto['price'], 2); ?></td>
-                        <td>
-                            <!-- Buy/Sell Form -->
-                            <form action="market.php" method="POST">
-                                <input type="hidden" name="crypto_id" value="<?= htmlspecialchars($crypto['name']); ?>">
-                                <input type="number" name="amount" placeholder="Amount" required>
-                                <select name="transaction_type" required>
-                                    <option value="buy">Buy</option>
-                                    <option value="sell">Sell</option>
-                                </select>
-                                <button type="submit">Submit</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+        <section id="market-overview">
+            <h2>Market Overview</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search for a cryptocurrency..." oninput="searchCrypto()">
+                <button id="search-btn" onclick="searchCrypto()">Search</button>
+            </div>
+            <div id="crypto-list">
+                <!-- JavaScript will populate this -->
+            </div>
+        </section>
+
+        <section id="actions">
+            <h2>Buy/Sell</h2>
+            <form id="trade-form">
+                <label for="crypto">Select Cryptocurrency:</label>
+                <select id="crypto" name="crypto">
+                    <!-- JavaScript will populate this -->
+                </select>
+
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" name="amount" min="1">
+
+                <button type="button" id="buy-btn">Buy</button>
+                <button type="button" id="sell-btn">Sell</button>
+            </form>
+        </section>
     </main>
 
     <footer>
         <p>&copy; 2024 Crypto Express</p>
     </footer>
+
+    <script>
+        // Mock data for top cryptocurrencies
+        const cryptoData = [
+            { name: 'Bitcoin', symbol: 'BTC', price: 34000 },
+            { name: 'Ethereum', symbol: 'ETH', price: 1900 },
+            { name: 'Binance Coin', symbol: 'BNB', price: 540 },
+            { name: 'Ripple', symbol: 'XRP', price: 0.5 },
+            { name: 'Cardano', symbol: 'ADA', price: 0.25 }
+        ];
+
+        // Function to search for a cryptocurrency
+        function searchCrypto() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const filteredData = cryptoData.filter(crypto =>
+                crypto.name.toLowerCase().includes(searchTerm) || crypto.symbol.toLowerCase().includes(searchTerm)
+            );
+            displaySearchResults(filteredData);
+        }
+
+        // Function to display search results
+        function displaySearchResults(filteredData) {
+            const cryptoListDiv = document.getElementById('crypto-list');
+            cryptoListDiv.innerHTML = ''; // Clear previous results
+
+            if (filteredData.length === 0) {
+                cryptoListDiv.innerHTML = '<p>No cryptocurrencies found.</p>';
+                return;
+            }
+
+            filteredData.forEach(crypto => {
+                const cryptoItem = document.createElement('div');
+                cryptoItem.classList.add('crypto-item');
+                cryptoItem.innerHTML = `
+                    <h3>${crypto.name} (${crypto.symbol})</h3>
+                    <p>Price: $${crypto.price.toFixed(2)}</p>
+                    <div class="crypto-details">
+                        <p>Details: ${crypto.name} is a popular cryptocurrency.</p>
+                    </div>
+                    <div class="action-btns">
+                        <button class="favorite-btn" onclick="toggleFavorite('${crypto.symbol}')">
+                            ${isFavorite(crypto.symbol) ? 'Unfavorite' : 'Favorite'}
+                        </button>
+                        <button class="buy-btn" onclick="buyCrypto('${crypto.symbol}')">Buy</button>
+                        <button class="sell-btn" onclick="sellCrypto('${crypto.symbol}')">Sell</button>
+                    </div>
+                `;
+                cryptoListDiv.appendChild(cryptoItem);
+            });
+        }
+
+        // Function to check if a crypto is a favorite
+        function isFavorite(symbol) {
+            return favorites.includes(symbol);
+        }
+
+        // Function to toggle favorite status
+        function toggleFavorite(symbol) {
+            const index = favorites.indexOf(symbol);
+            if (index > -1) {
+                favorites.splice(index, 1); // Remove from favorites
+            } else {
+                favorites.push(symbol); // Add to favorites
+            }
+            localStorage.setItem('favoriteCryptos', JSON.stringify(favorites));
+        }
+
+        // Handle buy action
+        function buyCrypto(symbol) {
+            const amount = document.getElementById('amount').value;
+            if (amount <= 0) {
+                alert('Please enter a valid amount.');
+                return;
+            }
+            alert(`You bought ${amount} of ${symbol}!`);
+        }
+
+        // Handle sell action
+        function sellCrypto(symbol) {
+            const amount = document.getElementById('amount').value;
+            if (amount <= 0) {
+                alert('Please enter a valid amount.');
+                return;
+            }
+            alert(`You sold ${amount} of ${symbol}!`);
+        }
+
+        // Run populateMarket on page load
+        window.onload = function() {
+            displaySearchResults(cryptoData);
+        };
+    </script>
 </body>
 </html>
 
