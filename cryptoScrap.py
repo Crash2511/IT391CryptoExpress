@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from sqlalchemy import create_engine, Column, String, DECIMAL, TIMESTAMP
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime, timezone
@@ -53,51 +53,42 @@ def connect_to_database(db_url):
 # Selenium function to scrape Yahoo Finance
 def scrape_crypto_data(symbol):
     options = Options()
-    options.add_argument('--headless')
+    options.add_argument('--headless')  # Run headless for performance
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(service=Service('/usr/bin/chromedriver'), options=options)
-
-    url = f'https://finance.yahoo.com/quote/{symbol}'
-    logging.info(f"Fetching data for {symbol} using Selenium")
-    driver.get(url)
-
-    # Initialize data dictionary
-    crypto_data = {
-        'name': symbol,
-        'name_abreviation': symbol.split('-')[0],
-        'price': Decimal('0.0000000000'),
-        'price_change': Decimal('0.0000000000'),
-        'change_percent': Decimal('0.00'),
-        'previous_close': "N/A",
-        'open': "N/A",
-        'price_low': Decimal('0.00'),
-        'price_high': Decimal('0.00'),
-        'market_cap': "N/A",
-        'circulating_supply': Decimal('0.00'),
-        'volume': Decimal('0.00'),
-        'volume_24hr': Decimal('0.00'),
-        'algorithm': "N/A",
-        'max_supply': "N/A",
-        'volume_24hr_all_currencies': "N/A",
-        'trade_time': datetime.now(timezone.utc)
-    }
+    driver = None
+    crypto_data = None
 
     try:
+        driver = webdriver.Chrome(service=Service('/usr/bin/chromedriver'), options=options)
+        url = f'https://finance.yahoo.com/quote/{symbol}'
+        logging.info(f"Fetching data for {symbol} using Selenium")
+        driver.get(url)
+
         WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketPrice"]'))
         )
 
-        # Scrape price-related data
-        crypto_data['price'] = Decimal(
-            driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketPrice"]').text.replace(',', '')
-        )
-        crypto_data['price_change'] = Decimal(
-            driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketChange"]').text.replace(',', '')
-        )
-        crypto_data['change_percent'] = Decimal(
-            driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketChangePercent"]').text.replace('%', '')
-        )
+        # Initialize data dictionary
+        crypto_data = {
+            'name': symbol,
+            'name_abreviation': symbol.split('-')[0],
+            'price': Decimal(driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketPrice"]').text.replace(',', '')),
+            'price_change': Decimal(driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketChange"]').text.replace(',', '')),
+            'change_percent': Decimal(driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketChangePercent"]').text.replace('%', '')),
+            'previous_close': "N/A",
+            'open': "N/A",
+            'price_low': Decimal('0.00'),
+            'price_high': Decimal('0.00'),
+            'market_cap': "N/A",
+            'circulating_supply': Decimal('0.00'),
+            'volume': Decimal('0.00'),
+            'volume_24hr': Decimal('0.00'),
+            'algorithm': "N/A",
+            'max_supply': "N/A",
+            'volume_24hr_all_currencies': "N/A",
+            'trade_time': datetime.now(timezone.utc)
+        }
 
         # Scrape summary table
         rows = driver.find_elements(By.CSS_SELECTOR, 'div#quote-summary table tbody tr')
@@ -106,23 +97,27 @@ def scrape_crypto_data(symbol):
             value = row.find_element(By.CSS_SELECTOR, 'td:last-child').text.strip()
 
             if 'Previous Close' in header:
-                crypto_data['previous_close'] = value
+                crypto_data['previous_close'] = value.replace(',', '')
             elif 'Open' in header:
-                crypto_data['open'] = value
+                crypto_data['open'] = value.replace(',', '')
             elif "Day's Range" in header:
                 low, high = value.split(' - ')
-                crypto_data['price_low'] = Decimal(low.replace(',', ''))
-                crypto_data['price_high'] = Decimal(high.replace(',', ''))
+                crypto_data['price_low'] = Decimal(low.replace(',', '').strip())
+                crypto_data['price_high'] = Decimal(high.replace(',', '').strip())
             elif 'Market Cap' in header:
                 crypto_data['market_cap'] = value
             elif 'Circulating Supply' in header:
                 crypto_data['circulating_supply'] = convert_to_decimal(value)
             elif 'Volume' in header and '24 Hr' not in header:
                 crypto_data['volume'] = convert_to_decimal(value)
-    except Exception as e:
+            elif 'Volume (24hr)' in header and 'All Currencies' not in header:
+                crypto_data['volume_24hr'] = convert_to_decimal(value)
+
+    except (TimeoutException, WebDriverException) as e:
         logging.warning(f"Error fetching data for {symbol}: {e}")
     finally:
-        driver.quit()
+        if driver:
+            driver.quit()
 
     return crypto_data
 
@@ -172,14 +167,12 @@ if __name__ == '__main__':
         exit("Failed to connect to database. Exiting.")
 
     # List of cryptocurrencies to scrape
-    mycrypto = [
-        'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD', 'BNB-USD',
-        'SHIB-USD', 'DOT-USD', 'LTC-USD', 'AVAX-USD', 'MATIC-USD', 'ATOM-USD', 'TRX-USD',
-        'UNI-USD', 'BCH-USD', 'XLM-USD', 'ICP-USD', 'HBAR-USD', 'VET-USD'
-    ]
+    mycrypto = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD', 'BNB-USD',
+                'SHIB-USD', 'DOT-USD', 'LTC-USD', 'AVAX-USD', 'MATIC-USD', 'ATOM-USD', 'TRX-USD',
+                'UNI-USD', 'BCH-USD', 'XLM-USD', 'ICP-USD', 'HBAR-USD', 'VET-USD']
 
     # Multi-threading to speed up scraping
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:  # Adjust max_workers as per your system resources
         results = list(executor.map(scrape_crypto_data, mycrypto))
 
     # Filter out any failed attempts
