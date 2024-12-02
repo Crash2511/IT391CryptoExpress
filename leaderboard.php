@@ -31,7 +31,6 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <title>Leaderboard - Crypto Express</title>
-    <!-- Ensure the external stylesheet is linked -->
     <link rel="stylesheet" href="styles.css">
     <style>
         /* Leaderboard table styles */
@@ -98,6 +97,17 @@ $conn->close();
         .active-sort {
             text-decoration: underline;
         }
+
+        /* Footer styling */
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -119,32 +129,32 @@ $conn->close();
         </nav>
     </header>
 
+    <!-- Leaderboard Table Section -->
     <main>
-        <section id="leaderboard">
-            <h2>Leaderboard</h2>
-            <table id="leaderboard-table">
-                <thead>
-                    <tr>
-                        <th id="rank-header">Rank</th>
-                        <th id="user-header">User</th>
-                        <th id="value-header">Portfolio Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($leaderboardData as $index => $user): ?>
-                        <tr>
-                            <td><?= $index + 1 ?></td>
-                            <td><?= htmlspecialchars($user['user_id']) ?></td>
-                            <td>$<?= number_format($user['account_balance'], 2) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </section>
+        <h2>Leaderboard - Top Users</h2>
+        <table id="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>User ID</th>
+                    <th>Account Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($leaderboardData as $index => $user): ?>
+                <tr>
+                    <td><?php echo $index + 1; ?></td>
+                    <td><?php echo $user['user_id']; ?></td>
+                    <td><?php echo number_format($user['account_balance'], 2); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </main>
 
+    <!-- Footer with Copyright -->
     <footer>
-        <p>&copy; 2024 Crypto Express</p>
+        <p>&copy; <?php echo date("Y"); ?> Crypto Express. All Rights Reserved.</p>
     </footer>
 </body>
 </html>
