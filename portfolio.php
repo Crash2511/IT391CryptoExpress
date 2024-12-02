@@ -16,8 +16,8 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch portfolio data
-$sql = "SELECT * FROM portfolio_data";  // Adjust to your portfolio table
+// Fetch portfolio data from the crypto_information table
+$sql = "SELECT * FROM crypto_information";  // Changed to your table
 $result = $conn->query($sql);
 
 $portfolio_data = [];
@@ -193,5 +193,6 @@ $conn->close();
     </script>
 </body>
 </html>
+
 
 
