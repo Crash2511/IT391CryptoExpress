@@ -63,6 +63,18 @@ $conn->close();
     <title>Your Portfolio - Crypto Express</title>
     <link rel="stylesheet" href="styles.css"> <!-- Link your CSS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
+    <style>
+        /* Footer styling */
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -163,6 +175,10 @@ $conn->close();
             <canvas id="portfolioChart"></canvas>
         </section>
     </main>
+
+    <footer>
+        <p>&copy; 2024 Crypto Express</p>
+    </footer>
 
     <script>
         // Initialize the portfolio chart
