@@ -41,9 +41,9 @@ $conn->close();
             padding: 0;
         }
 
-        /* Green header */
+        /* Header matching the index page */
         header {
-            background-color: #27ae60; /* Green color for the header */
+            background-color: #2c3e50; /* Dark green like the one from index */
             padding: 20px;
         }
 
@@ -54,9 +54,9 @@ $conn->close();
         }
 
         header nav h1 a {
-            color: #ffffff;
+            color: #ecf0f1;
             text-decoration: none;
-            font-size: 1.75rem; /* Standardize the font size for consistency */
+            font-size: 1.5rem;
         }
 
         .main-nav {
@@ -70,9 +70,9 @@ $conn->close();
         }
 
         .main-nav a {
-            color: #ffffff;
+            color: #ecf0f1;
             text-decoration: none;
-            font-size: 1.2rem; /* Increase font size for better readability */
+            font-size: 1.1rem;
         }
 
         .nav-right {
@@ -86,9 +86,9 @@ $conn->close();
         }
 
         .nav-right a {
-            color: #ffffff;
+            color: #ecf0f1;
             text-decoration: none;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         /* Market Overview */
@@ -112,115 +112,104 @@ $conn->close();
 
         #search-input {
             padding: 10px;
-            width: 80%;
+            width: 70%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
             margin-right: 10px;
         }
 
         #search-btn {
             padding: 10px;
-            cursor: pointer;
-        }
-
-        /* Table styling */
-        .crypto-list {
-            margin: 20px 0;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .crypto-item {
-            background-color: #ffffff;
-            border-radius: 8px;
-            margin: 10px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 200px;
-        }
-
-        .crypto-item h3 {
-            font-size: 1.2rem;
-            color: #2c3e50;
-        }
-
-        .crypto-item p {
-            font-size: 1rem;
-            color: #27ae60;
-            margin: 10px 0;
-        }
-
-        .crypto-item button {
-            padding: 10px;
-            background-color: #27ae60;
+            background-color: #f39c12;
             color: white;
             border: none;
             cursor: pointer;
+        }
+
+        /* Table for cryptocurrency data */
+        table {
             width: 100%;
-            border-radius: 5px;
+            border-collapse: collapse;
+            margin-top: 30px;
         }
 
-        .crypto-item button:hover {
-            background-color: #2ecc71;
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
         }
 
-        /* Footer */
-        footer {
+        th {
             background-color: #2c3e50;
-            color: #ffffff;
-            padding: 10px;
-            text-align: center;
+            color: white;
         }
 
-        footer p {
-            margin: 0;
+        /* Footer with copyright */
+        footer {
+            background-color: #000;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 1rem;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
         }
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <h1><a href="index.php">Crypto Express</a></h1>
-            <ul class="main-nav">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="portfolio.php">Portfolio</a></li>
-                <li><a href="market.php">Market</a></li>
-                <li><a href="leaderboard.php">Leaderboard</a></li>
-                <li><a href="settings.php">Settings</a></li>
-            </ul>
-            <ul class="nav-right">
-                <li><a href="login.php">Login</a></li>
-                <li><a href="register.php">Register</a></li>
-            </ul>
-        </nav>
-    </header>
 
-    <main>
-        <section id="market-overview">
-            <h2>Cryptocurrency Market</h2>
+<header>
+    <nav>
+        <h1><a href="index.php">Crypto Express</a></h1>
+        <ul class="main-nav">
+            <li><a href="market.php">Market</a></li>
+            <li><a href="portfolio.php">Portfolio</a></li>
+            <li><a href="settings.php">Settings</a></li>
+        </ul>
+        <ul class="nav-right">
+            <li><a href="logout.php">Logout</a></li>
+        </ul>
+    </nav>
+</header>
 
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search cryptocurrencies...">
-                <button id="search-btn">Search</button>
-            </div>
-
-            <div class="crypto-list">
+<main>
+    <div id="market-overview">
+        <h2>Cryptocurrency Market</h2>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
+            <button id="search-btn">Search</button>
+        </div>
+        
+        <!-- Table for crypto data -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Abbreviation</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
                 <?php foreach ($cryptoData as $crypto): ?>
-                    <div class="crypto-item">
-                        <h3><?php echo $crypto['name']; ?> (<?php echo $crypto['name_abreviation']; ?>)</h3>
-                        <p>Price: $<?php echo number_format($crypto['price'], 2); ?></p>
-                        <button>Add to Portfolio</button>
-                    </div>
+                    <tr>
+                        <td><?php echo $crypto['name']; ?></td>
+                        <td><?php echo $crypto['name_abreviation']; ?></td>
+                        <td><?php echo '$' . number_format($crypto['price'], 2); ?></td>
+                    </tr>
                 <?php endforeach; ?>
-            </div>
-        </section>
-    </main>
+            </tbody>
+        </table>
+    </div>
+</main>
 
-    <footer>
-        <p>&copy; 2024 Crypto Express</p>
-    </footer>
+<footer>
+    &copy; 2024 Crypto Express. All Rights Reserved.
+</footer>
+
 </body>
 </html>
+
 
 
 
