@@ -47,7 +47,6 @@ $conn->close();
             background-color: #343a40;
             color: white;
             text-transform: uppercase;
-            cursor: pointer; /* Make headers clickable */
         }
 
         #leaderboard-table tbody tr:nth-child(odd) {
@@ -84,68 +83,6 @@ $conn->close();
             text-align: center;
             margin-bottom: 20px;
         }
-
-        /* Style for buttons */
-        .action-buttons {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .action-buttons button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        .action-buttons button:hover {
-            background-color: #218838;
-        }
-
-        /* Navigation bar styles */
-        header nav {
-            background-color: #333;
-            padding: 15px;
-        }
-
-        header nav h1 a {
-            color: white;
-            text-decoration: none;
-            font-size: 24px;
-        }
-
-        .main-nav, .nav-right {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .main-nav li, .nav-right li {
-            display: inline;
-            margin-right: 20px;
-        }
-
-        .main-nav a, .nav-right a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        .main-nav a:hover, .nav-right a:hover {
-            text-decoration: underline;
-        }
-
-        footer {
-            background-color: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-        }
     </style>
 </head>
 <body>
@@ -167,28 +104,32 @@ $conn->close();
         </nav>
     </header>
 
-    <h2>Leaderboard - Crypto Express</h2>
-
-    <!-- Leaderboard Table -->
+    <h2>Leaderboard</h2>
     <table id="leaderboard-table">
         <thead>
             <tr>
+                <th>Rank</th>
                 <th>User ID</th>
                 <th>Account Balance</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($leaderboardData as $index => $row): ?>
-            <tr>
-                <td><?php echo htmlspecialchars($row['user_id']); ?></td>
-                <td><?php echo htmlspecialchars($row['account_balance']); ?></td>
-            </tr>
-            <?php endforeach; ?>
+            <?php
+                $rank = 1;
+                foreach ($leaderboardData as $data) {
+                    echo "<tr>";
+                    echo "<td>" . $rank . "</td>";
+                    echo "<td>" . $data['user_id'] . "</td>";
+                    echo "<td>" . number_format($data['account_balance'], 2) . "</td>"; // Format account balance
+                    echo "</tr>";
+                    $rank++;
+                }
+            ?>
         </tbody>
     </table>
 
     <footer>
-        &copy; 2024 Crypto Express. All rights reserved.
+        <p>&copy; 2024 Crypto Express. All rights reserved.</p>
     </footer>
 </body>
 </html>
