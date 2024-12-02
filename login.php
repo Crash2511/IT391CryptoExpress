@@ -100,7 +100,7 @@ $conn->close();
         }
 
         /* Button styling */
-        .login-container button {
+        .login-container input[type="submit"] {
             width: 100%;
             padding: 12px;
             background-color: #3498db;
@@ -111,59 +111,33 @@ $conn->close();
             font-size: 16px;
         }
 
-        .login-container button:hover {
+        .login-container input[type="submit"]:hover {
             background-color: #2980b9;
         }
 
         /* Error message styling */
         .error-message {
-            color: #e74c3c;
+            color: red;
             text-align: center;
-            margin: 10px 0;
+            margin-bottom: 20px;
             font-size: 14px;
-        }
-
-        /* Links styling */
-        .login-container p {
-            text-align: center;
-        }
-
-        .login-container p a {
-            color: #3498db;
-            text-decoration: none;
-        }
-
-        .login-container p a:hover {
-            text-decoration: underline;
-        }
-
-        /* Responsive design */
-        @media screen and (max-width: 600px) {
-            .login-container {
-                padding: 20px;
-                margin: 20px;
-            }
         }
     </style>
 </head>
 <body>
 
 <div class="login-container">
-    <h2>Login to Crypto Express</h2>
+    <h2>Login</h2>
 
-    <!-- Show error message if any -->
     <?php if (isset($error_message)): ?>
         <div class="error-message"><?php echo $error_message; ?></div>
     <?php endif; ?>
 
-    <!-- Login Form -->
-    <form action="" method="POST">
+    <form method="POST" action="">
         <input type="text" name="username" placeholder="Username" required>
         <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Login</button>
+        <input type="submit" value="Login">
     </form>
-
-    <p>Don't have an account? <a href="register.php">Sign up here</a></p>
 </div>
 
 </body>
