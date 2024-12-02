@@ -24,6 +24,12 @@ if ($result->num_rows > 0) {
     }
 }
 $conn->close();
+
+// Rank users by their account balance
+$rankedData = array_map(function($row, $index) {
+    $row['rank'] = $index + 1;
+    return $row;
+}, $leaderboardData, array_keys($leaderboardData));
 ?>
 
 <!DOCTYPE html>
@@ -34,10 +40,44 @@ $conn->close();
     <title>Leaderboard - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
     <style>
+        /* Navigation bar styles */
+        nav {
+            background-color: #343a40;
+            padding: 10px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        nav ul li {
+            display: inline;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        nav ul li a:hover {
+            background-color: #555;
+        }
+
         /* Leaderboard table styles */
         #leaderboard-table {
             width: 80%;
-            margin: 0 auto;
+            margin: 100px auto 20px; /* Adding top margin to avoid overlap with the nav bar */
             border-collapse: collapse;
         }
 
@@ -87,87 +127,54 @@ $conn->close();
             text-align: center;
             margin-bottom: 20px;
         }
-
-        /* Footer styling */
-        footer {
-            background-color: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-        }
-
-        /* Style for mobile responsiveness */
-        @media (max-width: 768px) {
-            #leaderboard-table {
-                width: 100%;
-                font-size: 14px;
-            }
-        }
     </style>
 </head>
 <body>
+    <!-- Header with Navigation Bar -->
     <header>
         <nav>
             <h1><a href="index.php">Crypto Express</a></h1>
             <ul class="main-nav">
                 <li><a href="index.php">Home</a></li>
+                <li><a href="portfolio.php">Portfolio</a></li>
+                <li><a href="market.php">Market</a></li>
                 <li><a href="leaderboard.php">Leaderboard</a></li>
-                <!-- Add other menu items as necessary -->
+                <li><a href="settings.php">Settings</a></li>
+            </ul>
+            <ul class="nav-right">
+                <li><a href="login.php">Login</a></li>
+                <li><a href="register.php">Register</a></li>
+                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
 
+    <!-- Leaderboard Table -->
     <h2>Leaderboard</h2>
-
     <table id="leaderboard-table">
         <thead>
             <tr>
-                <th onclick="sortTable(0)">User ID <span class="sort-arrow">↑↓</span></th>
-                <th onclick="sortTable(1)">Account Balance <span class="sort-arrow">↑↓</span></th>
+                <th onclick="sortLeaderboard()">Rank</th>
+                <th>User ID</th>
+                <th>Account Balance</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($leaderboardData as $index => $data): ?>
+            <?php foreach ($rankedData as $user) : ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($data['user_id']); ?></td>
-                    <td><?php echo number_format($data['account_balance'], 2); ?></td>
+                    <td><?php echo $user['rank']; ?></td>
+                    <td><?php echo $user['user_id']; ?></td>
+                    <td><?php echo $user['account_balance']; ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 
-    <footer>
-        <p>&copy; 2024 Crypto Express. All rights reserved.</p>
-    </footer>
-
+    <!-- JavaScript to reset ranks when clicking the Rank column -->
     <script>
-        // Function to sort the table by columns
-        let sortOrder = [true, true]; // Store sorting order for each column
-
-        function sortTable(colIndex) {
-            const table = document.getElementById("leaderboard-table");
-            const rows = Array.from(table.rows).slice(1); // Skip header row
-            const isNumeric = colIndex === 1;
-
-            rows.sort((a, b) => {
-                const aText = a.cells[colIndex].innerText;
-                const bText = b.cells[colIndex].innerText;
-
-                if (isNumeric) {
-                    const aVal = parseFloat(aText.replace(/,/g, ''));
-                    const bVal = parseFloat(bText.replace(/,/g, ''));
-                    return sortOrder[colIndex] ? bVal - aVal : aVal - bVal;
-                } else {
-                    return sortOrder[colIndex] ? aText.localeCompare(bText) : bText.localeCompare(aText);
-                }
-            });
-
-            // Append sorted rows back to the table body
-            rows.forEach(row => table.tBodies[0].appendChild(row));
-            sortOrder[colIndex] = !sortOrder[colIndex]; // Toggle sorting direction
+        function sortLeaderboard() {
+            // Reload the page to reset ranks (this will clear the rank reset for simplicity)
+            window.location.reload();
         }
     </script>
 </body>
