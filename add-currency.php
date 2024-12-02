@@ -19,38 +19,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $amount = $_POST['amount'];
     $user_id = $_SESSION['user_id'];
 
-    // Generate a verification code
-    $verification_code = rand(100000, 999999);
-
-    // Fetch user email from the database
-    $sql = "SELECT email FROM user_information WHERE user_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $user_email = $row['email'];
-
-        // Send verification email
-        $subject = "Your Crypto Express Verification Code";
-        $message = "Please confirm your request to add funds to your account. Your verification code is: $verification_code";
-        $headers = "From: your_email@example.com";
-
-        if (mail($user_email, $subject, $message, $headers)) {
-            $_SESSION['verification_code'] = $verification_code;
-            $_SESSION['amount'] = $amount;
-            header("Location: verify_currency.php");
-            exit();
-        } else {
-            $error_message = "Failed to send verification email. Please try again.";
-        }
+    // Validate user session
+    if (empty($user_id)) {
+        $error_message = "You need to log in to add currency.";
     } else {
-        $error_message = "User not found.";
-    }
+        // Generate a verification code
+        $verification_code = rand(100000, 999999);
 
-    $stmt->close();
+        // Fetch user email from the database
+        $sql = "SELECT email FROM user_information WHERE user_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $user_email = $row['email'];
+
+            // Send verification email
+            $subject = "Your Crypto Express Verification Code";
+            $message = "Please confirm your request to add funds to your account. Your verification code is: $verification_code";
+            $headers = "From: your_email@example.com";
+
+            if (mail($user_email, $subject, $message, $headers)) {
+                $_SESSION['verification_code'] = $verification_code;
+                $_SESSION['amount'] = $amount;
+                header("Location: verify_currency.php");
+                exit();
+            } else {
+                $error_message = "Failed to send verification email. Please try again.";
+            }
+        } else {
+            $error_message = "User not found.";
+        }
+
+        $stmt->close();
+    }
 }
 
 $conn->close();
