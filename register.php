@@ -73,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
 
                 // Registration successful, redirect to confirmation page regardless of email status
-                header("Location: registration_success.html");
+                header("Location: registration_success.php");
                 exit();
             } else {
                 $error_message = "Registration failed. Please try again.";
