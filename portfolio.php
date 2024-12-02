@@ -83,15 +83,20 @@ $conn->close();
             font-weight: bold;
         }
         .amount, .price, .value {
-            text-align: right;
+            font-weight: bold;
         }
-        .buy-action {
-            background-color: #e6ffe6;
-            color: green;
+
+        /* Black bar at the bottom */
+        footer {
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
         }
-        .sell-action {
-            background-color: #ffe6e6;
-            color: red;
+
+        footer a {
+            color: #fff;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -107,125 +112,75 @@ $conn->close();
                 <li><a href="settings.php">Settings</a></li>
             </ul>
             <ul class="nav-right">
-                <li><a href="logout.php">Logout</a></li>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <li><a href="logout.php">Logout</a></li>
+                <?php else: ?>
+                    <li><a href="login.php">Login</a></li>
+                    <li><a href="register.php">Register</a></li>
+                <?php endif; ?>
             </ul>
         </nav>
     </header>
 
     <main>
-        <section id="portfolio">
-            <h2>Your Portfolio (Detailed)</h2>
-            <?php if (empty($portfolioData)): ?>
-                <p>Your portfolio is currently empty. Once you start adding assets, they will appear here.</p>
-            <?php else: ?>
-                <table id="portfolio-table">
-                    <thead>
-                        <tr>
-                            <th>Asset</th>
-                            <th class="amount">Amount</th>
-                            <th class="price">Price</th>
-                            <th class="value">Value</th>
-                        </tr>
-                    </thead>
-                    <tbody id="portfolio-list">
-                        <?php 
-                        $totalValue = 0;
-                        foreach ($portfolioData as $asset): 
-                            $assetValue = $asset['amount'] * $asset['price'];
-                            $totalValue += $assetValue;
-                        ?>
-                            <tr>
-                                <td><?= htmlspecialchars($asset['name']) ?> (<?= htmlspecialchars($asset['name_abreviation']) ?>)</td>
-                                <td class="amount"><?= number_format($asset['amount'], 2) ?></td>
-                                <td class="price">$<?= number_format($asset['price'], 2) ?></td>
-                                <td class="value">$<?= number_format($assetValue, 2) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <div id="portfolio-summary">
-                    <h3>Total Portfolio Value: <span id="total-value" class="value">$<?= number_format($totalValue, 2) ?></span></h3>
-                </div>
-            <?php endif; ?>
-        </section>
+        <h2>Your Portfolio</h2>
 
-        <section id="last-trades">
-            <h2>Last Trades</h2>
-            <?php if (empty($tradeData)): ?>
-                <p>No trades found. Your trade history will be displayed here once you start trading.</p>
-            <?php else: ?>
-                <table id="trades-table">
-                    <thead>
+        <?php if (isset($_SESSION['user_id'])): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Abbreviation</th>
+                        <th>Amount</th>
+                        <th>Price</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($portfolioData as $crypto): ?>
                         <tr>
-                            <th>Asset</th>
-                            <th>Action</th>
-                            <th class="amount">Amount</th>
-                            <th class="price">Price</th>
-                            <th>Date</th>
+                            <td><?php echo $crypto['name']; ?></td>
+                            <td><?php echo $crypto['name_abreviation']; ?></td>
+                            <td><?php echo $crypto['amount']; ?></td>
+                            <td><?php echo $crypto['price']; ?></td>
+                            <td><?php echo $crypto['amount'] * $crypto['price']; ?></td>
                         </tr>
-                    </thead>
-                    <tbody id="trades-list">
-                        <?php foreach ($tradeData as $trade): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($trade['name']) ?> (<?= htmlspecialchars($trade['name_abreviation']) ?>)</td>
-                                <td class="<?= $trade['transaction_type'] === 'buy' ? 'buy-action' : 'sell-action' ?>">
-                                    <?= ucfirst(htmlspecialchars($trade['transaction_type'])) ?>
-                                </td>
-                                <td class="amount"><?= number_format($trade['amount'], 2) ?></td>
-                                <td class="price">$<?= number_format($trade['price'], 2) ?></td>
-                                <td><?= htmlspecialchars($trade['timestamp']) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </section>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
 
-        <section id="growth-chart">
-            <h2>Portfolio Growth Over Time</h2>
-            <canvas id="growthChart"></canvas>
-        </section>
+            <h3>Trade History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Crypto</th>
+                        <th>Transaction Type</th>
+                        <th>Amount</th>
+                        <th>Price</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($tradeData as $trade): ?>
+                        <tr>
+                            <td><?php echo $trade['name']; ?></td>
+                            <td><?php echo $trade['transaction_type']; ?></td>
+                            <td><?php echo $trade['amount']; ?></td>
+                            <td><?php echo $trade['price']; ?></td>
+                            <td><?php echo $trade['timestamp']; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>Please <a href="login.php">login</a> to view your portfolio and trade history.</p>
+        <?php endif; ?>
     </main>
 
+    <!-- Footer with black bar and copyright symbol -->
     <footer>
-        <p>&copy; 2024 Crypto Express</p>
+        <p>&copy; <?php echo date("Y"); ?> Crypto Express. All rights reserved.</p>
     </footer>
-
-    <script>
-        // Example data for the growth chart (replace with actual data from your server if available)
-        const labels = ["January", "February", "March", "April", "May", "June"];
-        const data = {
-            labels: labels,
-            datasets: [{
-                label: 'Portfolio Value Over Time',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                data: [500, 700, 800, 1200, 1500, 1800], // Replace with dynamic values
-                fill: true
-            }]
-        };
-
-        const config = {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Portfolio Growth Over Time'
-                    }
-                }
-            }
-        };
-
-        var growthChart = new Chart(
-            document.getElementById('growthChart'),
-            config
-        );
-    </script>
 </body>
 </html>
+
