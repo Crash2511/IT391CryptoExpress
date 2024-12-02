@@ -64,10 +64,19 @@ $conn->close();
     <link rel="stylesheet" href="styles.css">
     <style>
         /* General body styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
         body.light-theme {
             background-color: #f0f0f0;
             color: #000;
         }
+        
         body.dark-theme {
             background-color: #1e1e1e;
             color: #fff;
@@ -75,66 +84,120 @@ $conn->close();
 
         /* Container styling for the settings card */
         .settings-container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 50px auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
+            padding: 30px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
         }
 
-        /* Style for the settings items */
+        .settings-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
         .settings-item {
             margin-bottom: 20px;
+        }
+
+        /* Styling for input fields and textareas */
+        input[type="text"], input[type="email"], input[type="password"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fafafa;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        input[type="checkbox"] {
+            margin-top: 10px;
+        }
+
+        label {
+            font-size: 1.1rem;
+            color: #555;
+        }
+
+        /* Button styling */
+        .btn-save {
+            padding: 12px 20px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-save:hover {
+            background-color: #2ecc71;
+        }
+
+        /* Toggle switch for light/dark theme */
+        .theme-toggle {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .settings-item label {
+        .theme-toggle label {
             font-size: 1.1rem;
-            font-weight: 600;
-            flex: 1;
         }
 
-        .settings-item select,
-        .settings-item input[type="checkbox"],
-        .settings-item input[type="text"],
-        .settings-item input[type="password"],
-        .settings-item input[type="email"] {
-            flex: 0.4;
-            padding: 5px;
+        .theme-toggle input[type="checkbox"] {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            border-radius: 50px;
+            background-color: #ddd;
+            transition: 0.3s;
         }
 
-        /* Save button styling */
-        .save-button {
-            display: block;
-            margin: 40px auto 0;
-            padding: 10px 20px;
-            background-color: #343a40;
+        .theme-toggle input[type="checkbox"]:checked {
+            background-color: #27ae60;
+        }
+
+        .theme-toggle input[type="checkbox"]:before {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            transition: 0.3s;
+        }
+
+        .theme-toggle input[type="checkbox"]:checked:before {
+            left: 28px;
+        }
+        
+        /* Footer styling */
+        footer {
+            background-color: #2c3e50;
             color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            width: 100%;
-            max-width: 200px;
-        }
-
-        .save-button:hover {
-            background-color: #495057;
-        }
-
-        /* Header styling */
-        h2 {
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 1.5rem;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
         }
 
     </style>
 </head>
-<body class="<?php echo isset($user['theme']) ? $user['theme'] . '-theme' : 'light-theme'; ?>">
+    <body>
     <header>
         <nav>
             <h1><a href="index.php">Crypto Express</a></h1>
@@ -148,94 +211,81 @@ $conn->close();
             <ul class="nav-right">
                 <li><a href="login.php">Login</a></li>
                 <li><a href="register.php">Register</a></li>
-                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
 
-    <main>
-        <div class="settings-container">
-            <h2>Settings</h2>
+    <div class="settings-container">
+        <h2>User Settings</h2>
+        <form method="POST" action="">
+            <!-- Alias Field -->
+            <div>
+                <label for="alias">Alias</label>
+                <input type="text" id="alias" name="alias" value="<?php echo $user['alias']; ?>" required>
+            </div>
 
-            <form method="post" action="">
-                <!-- Leaderboard toggle -->
-                <div class="settings-item">
-                    <label for="leaderboard-toggle">Leaderboard:</label>
-                    <input type="checkbox" id="leaderboard-toggle" name="leaderboard" <?php echo isset($user['leaderboard']) && $user['leaderboard'] ? 'checked' : ''; ?>>
-                </div>
+            <!-- Preferred Currency -->
+            <div>
+                <label for="currency">Preferred Currency</label>
+                <select id="currency" name="currency">
+                    <option value="USD" <?php if ($user['preferred_currency'] == 'USD') echo 'selected'; ?>>USD</option>
+                    <option value="EUR" <?php if ($user['preferred_currency'] == 'EUR') echo 'selected'; ?>>EUR</option>
+                    <option value="BTC" <?php if ($user['preferred_currency'] == 'BTC') echo 'selected'; ?>>BTC</option>
+                    <option value="ETH" <?php if ($user['preferred_currency'] == 'ETH') echo 'selected'; ?>>ETH</option>
+                </select>
+            </div>
 
-                <!-- Alias -->
-                <div class="settings-item">
-                    <label for="alias-input">Alias:</label>
-                    <input type="text" id="alias-input" name="alias" value="<?php echo $user['alias']; ?>">
-                </div>
+            <!-- Notifications -->
+            <div>
+                <label for="notifications">Enable Notifications</label>
+                <input type="checkbox" id="notifications" name="notifications" <?php if ($user['notifications']) echo 'checked'; ?>>
+            </div>
 
-                <!-- Currency -->
-                <div class="settings-item">
-                    <label for="currency-select">Preferred Currency:</label>
-                    <select id="currency-select" name="currency">
-                        <option value="USD" <?php echo $user['preferred_currency'] == 'USD' ? 'selected' : ''; ?>>USD</option>
-                        <option value="EUR" <?php echo $user['preferred_currency'] == 'EUR' ? 'selected' : ''; ?>>EUR</option>
-                        <option value="BTC" <?php echo $user['preferred_currency'] == 'BTC' ? 'selected' : ''; ?>>BTC</option>
-                        <option value="ETH" <?php echo $user['preferred_currency'] == 'ETH' ? 'selected' : ''; ?>>ETH</option>
-                    </select>
-                </div>
+            <!-- Language -->
+            <div>
+                <label for="language">Language</label>
+                <select id="language" name="language">
+                    <option value="en" <?php if ($user['language'] == 'en') echo 'selected'; ?>>English</option>
+                    <option value="es" <?php if ($user['language'] == 'es') echo 'selected'; ?>>Spanish</option>
+                    <option value="fr" <?php if ($user['language'] == 'fr') echo 'selected'; ?>>French</option>
+                </select>
+            </div>
 
-                <!-- Notifications and Email Alerts grouped -->
-                <div class="settings-item">
-                    <label for="notifications-toggle">Notifications and Email Alerts:</label>
-                    <input type="checkbox" id="notifications-toggle" name="notifications" <?php echo isset($user['notifications']) && $user['notifications'] ? 'checked' : ''; ?>>
-                </div>
+            <!-- Theme -->
+            <div>
+                <label for="theme">Theme</label>
+                <select id="theme" name="theme">
+                    <option value="light" <?php if ($user['theme'] == 'light') echo 'selected'; ?>>Light</option>
+                    <option value="dark" <?php if ($user['theme'] == 'dark') echo 'selected'; ?>>Dark</option>
+                </select>
+            </div>
 
-                <!-- Language -->
-                <div class="settings-item">
-                    <label for="language-select">Language:</label>
-                    <select id="language-select" name="language">
-                        <option value="en" <?php echo $user['language'] == 'en' ? 'selected' : ''; ?>>English</option>
-                        <option value="es" <?php echo $user['language'] == 'es' ? 'selected' : ''; ?>>Spanish</option>
-                        <option value="fr" <?php echo $user['language'] == 'fr' ? 'selected' : ''; ?>>French</option>
-                        <option value="de" <?php echo $user['language'] == 'de' ? 'selected' : ''; ?>>German</option>
-                    </select>
-                </div>
+            <!-- Email -->
+            <div>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="<?php echo $user['email']; ?>" required>
+            </div>
 
-                <!-- Theme -->
-                <div class="settings-item">
-                    <label for="theme-select">Theme:</label>
-                    <select id="theme-select" name="theme">
-                        <option value="light" <?php echo $user['theme'] == 'light' ? 'selected' : ''; ?>>Light</option>
-                        <option value="dark" <?php echo $user['theme'] == 'dark' ? 'selected' : ''; ?>>Dark</option>
-                    </select>
-                </div>
+            <!-- Username -->
+            <div>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="<?php echo $user['username']; ?>" required>
+            </div>
 
-                <!-- Email change and confirmation -->
-                <div class="settings-item">
-                    <label for="email-input">Change Email:</label>
-                    <input type="email" id="email-input" name="email" value="<?php echo $user['email']; ?>">
-                </div>
+            <!-- Password -->
+            <div>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" value="<?php echo $user['user_password']; ?>" required>
+            </div>
 
-                <!-- Username -->
-                <div class="settings-item">
-                    <label for="username-input">Username:</label>
-                    <input type="text" id="username-input" name="username" value="<?php echo $user['username']; ?>">
-                </div>
-
-                <!-- Password -->
-                <div class="settings-item">
-                    <label for="password-input">New Password:</label>
-                    <input type="password" id="password-input" name="password" placeholder="New password">
-                </div>
-
-                <!-- Save button -->
-                <button class="save-button" type="submit">Save Settings</button>
-            </form>
-        </div>
-    </main>
+            <!-- Submit Button -->
+            <button type="submit">Save Settings</button>
+        </form>
+    </div>
 
     <footer>
-        <p>&copy; 2024 Crypto Express</p>
+        <p>&copy; 2024 Crypto Express. All rights reserved.</p>
     </footer>
 </body>
 </html>
-
-
 
