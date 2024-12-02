@@ -16,26 +16,35 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Handle form submission
+// Handle form submission for login
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user_id = $_POST['username'];
     $user_password = $_POST['password'];
 
     // Query to check if user exists
-    $sql = "SELECT * FROM user_information WHERE user_id = ? AND user_password = ?";
+    $sql = "SELECT * FROM user_information WHERE user_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ss", $user_id, $user_password);
+    $stmt->bind_param("s", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        // Valid user, start the session
-        $_SESSION['user_id'] = $user_id;
-        header("Location: dashboard.php");
-        exit();
+        // Fetch user data
+        $row = $result->fetch_assoc();
+        
+        // Verify the hashed password stored in the database with the entered password
+        if (password_verify($user_password, $row['user_password'])) {
+            // Valid user, start the session
+            $_SESSION['user_id'] = $user_id;
+            header("Location: dashboard.php");
+            exit();
+        } else {
+            // Invalid password
+            $error_message = "Invalid password. Please try again.";
+        }
     } else {
-        // Invalid login, show error
-        $error_message = "Invalid credentials. Please try again.";
+        // Invalid user
+        $error_message = "No user found with that username.";
     }
 
     $stmt->close();
