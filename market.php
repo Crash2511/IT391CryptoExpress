@@ -34,135 +34,208 @@ $conn->close();
     <title>Market - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        .favorite-btn {
-            padding: 5px 10px;
-            background-color: #f1c40f;
-            border: none;
-            cursor: pointer;
-            margin-top: 5px;
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
         }
 
-        .favorite-btn.active {
-            background-color: #e67e22;
+        header {
+            background-color: #2c3e50;
+            padding: 20px;
+        }
+
+        header nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header nav h1 a {
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
+
+        .main-nav {
+            list-style: none;
+            display: flex;
+            margin: 0;
+        }
+
+        .main-nav li {
+            margin-left: 20px;
+        }
+
+        .main-nav a {
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 1.1rem;
+        }
+
+        .nav-right {
+            list-style: none;
+            display: flex;
+            margin: 0;
+        }
+
+        .nav-right li {
+            margin-left: 20px;
+        }
+
+        .nav-right a {
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+
+        /* Market Overview */
+        main {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        #market-overview h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
         }
 
         .search-container {
-            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
         }
 
         #search-input {
             padding: 10px;
-            width: 80%;
+            width: 70%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
             margin-right: 10px;
         }
 
         #search-btn {
             padding: 10px;
+            background-color: #f39c12;
+            border: none;
+            border-radius: 4px;
+            color: white;
             cursor: pointer;
         }
 
-        /* Center-align and format prices */
-        .crypto-item p {
+        #search-btn:hover {
+            background-color: #e67e22;
+        }
+
+        .crypto-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .crypto-item {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 250px;
+            padding: 20px;
             text-align: center;
-            font-size: 1em;
+            transition: transform 0.3s ease;
+        }
+
+        .crypto-item:hover {
+            transform: scale(1.05);
+        }
+
+        .crypto-item h3 {
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+
+        .crypto-item p {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin: 10px 0;
+        }
+
+        .favorite-btn {
+            padding: 5px 10px;
+            background-color: #f1c40f;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+
+        .favorite-btn.active {
+            background-color: #e67e22;
         }
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <h1><a href="index.php">Crypto Express</a></h1>
-            <ul class="main-nav">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="portfolio.php">Portfolio</a></li>
-                <li><a href="market.php">Market</a></li>
-                <li><a href="leaderboard.php">Leaderboard</a></li>
-                <li><a href="settings.php">Settings</a></li>
-            </ul>
-            <ul class="nav-right">
-                <li><a href="login.php">Login</a></li>
-                <li><a href="register.php">Register</a></li>
-                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
-            </ul>
-        </nav>
-    </header>
 
-    <main>
-        <section id="market-overview">
-            <h2>Market Overview</h2>
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
-                <button id="search-btn" onclick="searchCrypto()">Search</button>
-            </div>
-            <div id="crypto-list">
-                <?php foreach ($cryptoData as $crypto): ?>
-                    <div class="crypto-item">
-                        <h3><?= htmlspecialchars($crypto['name']) ?> (<?= htmlspecialchars($crypto['name_abreviation']) ?>)</h3>
-                        <p>Price: $<?= number_format($crypto['price'], 2) ?></p>
-                        <button class="favorite-btn" onclick="toggleFavorite('<?= htmlspecialchars($crypto['name_abreviation']) ?>')">
-                            Favorite
-                        </button>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
+<header>
+    <nav>
+        <h1><a href="index.php">Crypto Express</a></h1>
+        <ul class="main-nav">
+            <li><a href="index.php">Home</a></li>
+            <li><a href="portfolio.php">Portfolio</a></li>
+            <li><a href="market.php">Market</a></li>
+            <li><a href="leaderboard.php">Leaderboard</a></li>
+            <li><a href="settings.php">Settings</a></li>
+        </ul>
+        <ul class="nav-right">
+            <li><a href="login.php">Login</a></li>
+            <li><a href="register.php">Register</a></li>
+            <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
+        </ul>
+    </nav>
+</header>
 
-        <section id="actions">
-            <h2>Buy/Sell</h2>
-            <form id="trade-form">
-                <label for="crypto">Select Cryptocurrency:</label>
-                <select id="crypto" name="crypto">
-                    <?php foreach ($cryptoData as $crypto): ?>
-                        <option value="<?= htmlspecialchars($crypto['name_abreviation']) ?>">
-                            <?= htmlspecialchars($crypto['name']) ?> (<?= htmlspecialchars($crypto['name_abreviation']) ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+<main>
+    <section id="market-overview">
+        <h2>Market Overview</h2>
 
-                <label for="amount">Amount:</label>
-                <input type="number" id="amount" name="amount" min="1">
+        <!-- Search Section -->
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
+            <button id="search-btn" onclick="searchCrypto()">Search</button>
+        </div>
 
-                <button type="button" id="buy-btn">Buy</button>
-                <button type="button" id="sell-btn">Sell</button>
-            </form>
-        </section>
-    </main>
+        <!-- Crypto List -->
+        <div class="crypto-list">
+            <?php foreach($cryptoData as $crypto): ?>
+                <div class="crypto-item">
+                    <h3><?php echo $crypto['name']; ?> (<?php echo $crypto['name_abreviation']; ?>)</h3>
+                    <p>Price: $<?php echo number_format($crypto['price'], 2); ?></p>
+                    <button class="favorite-btn">Add to Favorites</button>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+</main>
 
-    <footer>
-        <p>&copy; 2024 Crypto Express</p>
-    </footer>
-
-    <script>
-        // Load favorites from local storage
-        const favorites = JSON.parse(localStorage.getItem('favoriteCryptos')) || [];
-
-        // Function to toggle favorite status
-        function toggleFavorite(symbol) {
-            const index = favorites.indexOf(symbol);
-            if (index > -1) {
-                favorites.splice(index, 1); // Remove from favorites
+<script>
+    function searchCrypto() {
+        const input = document.getElementById("search-input").value.toLowerCase();
+        const cryptoItems = document.querySelectorAll(".crypto-item");
+        
+        cryptoItems.forEach(item => {
+            const name = item.querySelector("h3").textContent.toLowerCase();
+            if (name.includes(input)) {
+                item.style.display = "block";
             } else {
-                favorites.push(symbol); // Add to favorites
+                item.style.display = "none";
             }
-            localStorage.setItem('favoriteCryptos', JSON.stringify(favorites));
-            location.reload(); // Re-render the market list
-        }
+        });
+    }
+</script>
 
-        // Function to search for a cryptocurrency
-        function searchCrypto() {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const cryptoItems = document.querySelectorAll('.crypto-item');
-
-            cryptoItems.forEach(item => {
-                const name = item.querySelector('h3').textContent.toLowerCase();
-                if (name.includes(searchTerm)) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        }
-    </script>
 </body>
 </html>
+
 
