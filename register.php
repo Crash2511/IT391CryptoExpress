@@ -1,188 +1,151 @@
-from flask import Flask, request, render_template, redirect, url_for, session
-import requests
-from bs4 import BeautifulSoup
-from sqlalchemy import create_engine, Column, Integer, String, Float, DECIMAL
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-import re
+<?php
+// Start session to manage registration state
+session_start();
 
-app = Flask(__name__)
-app.secret_key = 'supersecretkey'
+// Database connection settings
+$servername = "localhost";
+$username = "user";
+$password = "Battle2511!";
+$dbname = "crypto_express";
 
-Base = declarative_base()
+// Connect to the database
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-class CryptoInformation(Base):
-    __tablename__ = 'crypto_information'
-    name = Column(String(50), primary_key=True, nullable=False)
-    name_abreviation = Column(String(10), nullable=False)
-    price = Column(DECIMAL(10, 2), nullable=False, default=0.0)
-    price_change = Column(DECIMAL(10, 2), nullable=False, default=0.0)
-    change_percent = Column(DECIMAL(5, 2), nullable=False, default=0.0)
-    market_cap = Column(String(20), nullable=False, default='0')
-    volume = Column(DECIMAL(15, 2), nullable=False, default=0.0)
-    circulating_supply = Column(DECIMAL(20, 2), nullable=False, default=0.0)
-    total_supply = Column(DECIMAL(20, 2), nullable=False, default=0.0)
-    price_high = Column(DECIMAL(10, 2), nullable=False, default=0.0)
-    price_low = Column(DECIMAL(10, 2), nullable=False, default=0.0)
-    trade_time = Column(String(50))
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
-class UserInformation(Base):
-    __tablename__ = 'user_information'
-    user_id = Column(String(20), primary_key=True, nullable=False)
-    user_password = Column(String(30), nullable=False)
-    first_name = Column(String(15))
-    last_name = Column(String(15))
-    email = Column(String(25))
-    account_balance = Column(DECIMAL(15, 2))
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $user_id = $_POST['username'];
+    $user_password = $_POST['password'];
+    $confirm_password = $_POST['confirm-password'];
+    $email = $_POST['email'];
 
-# Function to connect to the database
-def connect_to_database(db_url):
-    try:
-        engine = create_engine(db_url, pool_size=5, echo=True)
-        Base.metadata.create_all(engine)
-        return engine
-    except Exception as e:
-        print(f"Error connecting to database: {e}")
-        return None
+    // Check if passwords match
+    if ($user_password != $confirm_password) {
+        $error_message = "Passwords do not match. Please try again.";
+    } else {
+        // Check if user already exists
+        $sql = "SELECT * FROM user_information WHERE user_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-# Function to scrape Yahoo finance for given cryptocurrency symbols
-def get_crypto_data(symbol):
-    url = f'https://finance.yahoo.com/quote/{symbol}'
-    try:
-        r = requests.get(url)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
-            
-            price_element = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketPrice'})
-            change_element = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketChange'})
-            change_percent_element = soup.find('fin-streamer', {'data-symbol': symbol, 'data-field': 'regularMarketChangePercent'})
-            market_cap_element = soup.find(text=re.compile('Market Cap')).find_next('td').text
-            volume_element = soup.find(text=re.compile('Volume')).find_next('td').text
-            
-            if price_element and change_element and change_percent_element:
-                price = price_element.text.strip()
-                change = change_element.text.strip()
-                change_percent = change_percent_element.text.strip()
-                return {
-                    'name': symbol,
-                    'name_abreviation': symbol.split('-')[0],
-                    'price': float(price.replace(',', '')),
-                    'price_change': float(change.replace(',', '')),
-                    'change_percent': float(change_percent.replace('%', '').replace(',', '')),
-                    'market_cap': market_cap_element,
-                    'volume': volume_element
-                }
-            else:
-                print(f"Required data not found for {symbol}")
-                return None
-        else:
-            print(f"Failed to fetch data for {symbol}: {r.status_code}")
-            return None
-    except Exception as e:
-        print(f"Error getting data for {symbol}: {e}")
-        return None
+        if ($result->num_rows > 0) {
+            $error_message = "Username already exists. Please choose another.";
+        } else {
+            // Insert new user into the database
+            $sql = "INSERT INTO user_information (user_id, user_password, email) VALUES (?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sss", $user_id, $user_password, $email);
 
-# Function to insert data into the database
-def insert_data_into_database(engine, data):
-    if engine is None:
-        return
+            if ($stmt->execute()) {
+                // Registration successful, redirect to login page
+                header("Location: login.php");
+                exit();
+            } else {
+                $error_message = "Registration failed. Please try again.";
+            }
+        }
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
+        $stmt->close();
+    }
+}
 
-    try:
-        session.bulk_insert_mappings(CryptoInformation, data)
-        session.commit()
-    except Exception as e:
-        print(f"Error inserting data: {e}")
-        session.rollback()
-    finally:
-        session.close()
+$conn->close();
+?>
 
-# Route for login page
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        user_id = request.form['username']
-        user_password = request.form['password']
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Crypto Express</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Form container styling */
+        form {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
 
-        # Connect to the database
-        engine = connect_to_database(db_url)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+        /* Input styling */
+        input[type="text"], input[type="password"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
 
-        # Check if user exists
-        user = session.query(UserInformation).filter_by(user_id=user_id, user_password=user_password).first()
-        session.close()
+        /* Button styling */
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #343a40;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
 
-        if user:
-            session['user_id'] = user_id
-            return redirect(url_for('dashboard'))
-        else:
-            return render_template('login.html', error='Invalid credentials. Please try again.')
-    return render_template('login.html')
+        button:hover {
+            background-color: #495057;
+        }
 
-# Route for register page
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        user_id = request.form['username']
-        user_password = request.form['password']
-        confirm_password = request.form['confirm-password']
-        email = request.form['email']
+        /* Form heading styling */
+        h2 {
+            text-align: center;
+        }
 
-        # Check if passwords match
-        if user_password != confirm_password:
-            return render_template('register.html', error='Passwords do not match. Please try again.')
+        p {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><a href="index.php">Crypto Express</a></h1>
+    </header>
 
-        # Connect to the database
-        engine = connect_to_database(db_url)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+    <main>
+        <h2>Register</h2>
+        <form id="register-form" method="POST" action="register.php">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
 
-        # Check if user already exists
-        existing_user = session.query(UserInformation).filter_by(user_id=user_id).first()
-        if existing_user:
-            session.close()
-            return render_template('register.html', error='Username already exists. Please choose another.')
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
 
-        # Create new user
-        new_user = UserInformation(user_id=user_id, user_password=user_password, email=email)
-        session.add(new_user)
-        try:
-            session.commit()
-            return redirect(url_for('login'))
-        except Exception as e:
-            session.rollback()
-            return render_template('register.html', error='Registration failed. Please try again.')
-        finally:
-            session.close()
-    return render_template('register.html')
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
 
-# Route for dashboard page
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('dashboard.html', user_id=session['user_id'])
+            <label for="confirm-password">Confirm Password:</label>
+            <input type="password" id="confirm-password" name="confirm-password" required>
 
-if __name__ == '__main__':
-    db_url = 'mysql+mysqlconnector://user:password@localhost/crypto_simulator'
+            <?php
+            if (!empty($error_message)) {
+                echo "<p style='color: red;'>$error_message</p>";
+            }
+            ?>
 
-    engine = connect_to_database(db_url)
-    if engine is None:
-        exit("Failed to connect to database. Exiting.")
+            <button type="submit">Register</button>
+        </form>
+        <p>Already have an account? <a href="login.php">Login here</a>.</p>
+    </main>
 
-    mycrypto = ['BTC-USD', 'ETH-USD', 'BNB-USD', 'SOL-USD', 'DOGE-USD']
-    stockdata = []
+    <footer>
+        <p>&copy; 2024 Crypto Express</p>
+    </footer>
+</body>
+</html>
 
-    for symbol in mycrypto:
-        data = get_crypto_data(symbol)
-        if data:
-            stockdata.append(data)
-
-    insert_data_into_database(engine, stockdata)
-
-    app.run(debug=True)
-
-    print("Data extraction and insertion completed.")
