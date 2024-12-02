@@ -5,8 +5,8 @@ error_reporting(E_ALL);
 
 // Database connection
 $servername = "localhost";
-$username = "root";
-$password = "your_password";  // Replace with your password
+$username = "user"; 
+$password = "Battle2511!";  // Replace with your password 
 $dbname = "crypto_express";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -49,18 +49,18 @@ $conn->close();
 <body>
     <header>
         <nav>
-            <h1><a href="index.html">Crypto Express</a></h1>
+            <h1><a href="index.php">Crypto Express</a></h1>
             <ul class="main-nav">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="portfolio.html">Portfolio</a></li>
-                <li><a href="market.html">Market</a></li>
-                <li><a href="leaderboard.html">Leaderboard</a></li>
-                <li><a href="settings.html">Settings</a></li>
+                <li><a href="index.php">Home</a></li>
+                <li><a href="portfolio.php">Portfolio</a></li>
+                <li><a href="market.php">Market</a></li>
+                <li><a href="leaderboard.php">Leaderboard</a></li>
+                <li><a href="settings.php">Settings</a></li>
             </ul>
             <ul class="nav-right">
-                <li><a href="login.html">Login</a></li>
-                <li><a href="register.html">Register</a></li>
-                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
+                <li><a href="login.php">Login</a></li>
+                <li><a href="register.php">Register</a></li>
+                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
@@ -80,12 +80,14 @@ $conn->close();
                 <tbody id="portfolio-list">
                     <?php
                     // Check if portfolio_data is populated and create table rows dynamically
+                    $total_value = 0;  // To calculate total portfolio value
                     if (count($portfolio_data) > 0) {
                         foreach ($portfolio_data as $portfolio_item) {
                             $asset = $portfolio_item['asset'];
                             $amount = $portfolio_item['amount'];
                             $price = $portfolio_item['price'];
                             $value = $amount * $price; // Calculate the portfolio value
+                            $total_value += $value;
                             echo "<tr>
                                     <td>{$asset}</td>
                                     <td class='amount'>{$amount}</td>
@@ -100,7 +102,7 @@ $conn->close();
                 </tbody>
             </table>
             <div id="portfolio-summary">
-                <h3>Total Portfolio Value: <span id="total-value" class="value">$0.00</span></h3>
+                <h3>Total Portfolio Value: <span id="total-value" class="value">$<?php echo number_format($total_value, 2); ?></span></h3>
             </div>
         </section>
 
