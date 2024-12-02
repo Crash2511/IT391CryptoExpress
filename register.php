@@ -79,12 +79,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $error_message = "Registration failed. Please try again.";
             }
         }
-
-        $stmt->close();
     }
 }
-
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -95,88 +91,125 @@ $conn->close();
     <title>Register - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Form container styling */
-        form {
-            max-width: 400px;
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #2c3e50;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: #ecf0f1;
+            font-size: 2rem;
+        }
+
+        .container {
+            max-width: 500px;
             margin: 50px auto;
             padding: 20px;
             background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        /* Input styling */
+        .container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
         input[type="text"], input[type="password"], input[type="email"] {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
-            box-sizing: border-box;
+            font-size: 1rem;
         }
 
-        /* Button styling */
-        button {
-            display: block;
+        input[type="submit"] {
             width: 100%;
-            padding: 10px;
-            background-color: #343a40;
-            color: white;
+            padding: 12px;
+            background-color: #3498db;
             border: none;
             border-radius: 5px;
+            color: #fff;
+            font-size: 1.2rem;
             cursor: pointer;
         }
 
-        button:hover {
-            background-color: #495057;
+        input[type="submit"]:hover {
+            background-color: #2980b9;
         }
 
-        /* Form heading styling */
-        h2 {
+        .error-message {
+            color: red;
+            font-size: 1rem;
             text-align: center;
+            margin-bottom: 20px;
         }
 
-        p {
+        .success-message {
+            color: green;
+            font-size: 1rem;
             text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .form-footer a {
+            color: #3498db;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
+
     <header>
-        <h1><a href="index.php">Crypto Express</a></h1>
+        <h1>Crypto Express</h1>
     </header>
 
-    <main>
-        <h2>Register</h2>
-        <form id="register-form" method="POST" action="register.php">
-            <label for="username">Username:</label>
+    <div class="container">
+        <h2>Create an Account</h2>
+
+        <!-- Error message -->
+        <?php if (!empty($error_message)): ?>
+            <div class="error-message"><?php echo $error_message; ?></div>
+        <?php endif; ?>
+
+        <form method="POST" action="">
+            <label for="username">Username</label>
             <input type="text" id="username" name="username" required>
 
-            <label for="email">Email:</label>
+            <label for="email">Email Address</label>
             <input type="email" id="email" name="email" required>
 
-            <label for="password">Password:</label>
+            <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
 
-            <label for="confirm-password">Confirm Password:</label>
+            <label for="confirm-password">Confirm Password</label>
             <input type="password" id="confirm-password" name="confirm-password" required>
 
-            <?php
-            if (!empty($error_message)) {
-                echo "<p style='color: red;'>$error_message</p>";
-            }
-            ?>
-
-            <button type="submit">Register</button>
+            <input type="submit" value="Register">
         </form>
-        <p>Already have an account? <a href="login.php">Login here</a>.</p>
-    </main>
 
-    <footer>
-        <p>&copy; 2024 Crypto Express</p>
-    </footer>
+        <div class="form-footer">
+            <p>Already have an account? <a href="login.php">Login here</a></p>
+        </div>
+    </div>
+
 </body>
 </html>
+
 
 
 
