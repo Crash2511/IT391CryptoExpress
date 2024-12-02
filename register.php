@@ -27,6 +27,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($user_password != $confirm_password) {
         $error_message = "Passwords do not match. Please try again.";
     } else {
+        // Hash the password before storing it
+        $hashed_password = password_hash($user_password, PASSWORD_BCRYPT);
+
         // Check if user already exists
         $sql = "SELECT * FROM user_information WHERE user_id = ?";
         $stmt = $conn->prepare($sql);
@@ -40,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Insert new user into the database
             $sql = "INSERT INTO user_information (user_id, user_password, email) VALUES (?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sss", $user_id, $user_password, $email);
+            $stmt->bind_param("sss", $user_id, $hashed_password, $email);
 
             if ($stmt->execute()) {
                 // Registration successful, redirect to login page
