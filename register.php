@@ -23,64 +23,79 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $confirm_password = $_POST['confirm-password'];
     $email = $_POST['email'];
 
-    // Email details for sending confirmation
-    $sender_email = "cryptoExpress@gmail.com";
-    $sender_password = "your_gmail_app_password";
-    $smtp_host = "smtp.gmail.com";
-    $smtp_port = 587;
+    // Check if email is already registered
+    $sql = "SELECT * FROM user_information WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-    // Check if passwords match
-    if ($user_password != $confirm_password) {
-        $error_message = "Passwords do not match. Please try again.";
+    if ($result->num_rows > 0) {
+        $error_message = "This email is already registered. Please use another email.";
     } else {
-        // Hash the password before storing it
-        $hashed_password = password_hash($user_password, PASSWORD_BCRYPT);
+        // Email details for sending confirmation
+        $sender_email = "cryptoExpress@gmail.com";
+        $sender_password = "your_gmail_app_password";
+        $smtp_host = "smtp.gmail.com";
+        $smtp_port = 587;
 
-        // Check if user already exists
-        $sql = "SELECT * FROM user_information WHERE user_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            $error_message = "Username already exists. Please choose another.";
+        // Check if passwords match
+        if ($user_password != $confirm_password) {
+            $error_message = "Passwords do not match. Please try again.";
         } else {
-            // Insert new user into the database
-            $sql = "INSERT INTO user_information (user_id, user_password, email) VALUES (?, ?, ?)";
+            // Hash the password before storing it
+            $hashed_password = password_hash($user_password, PASSWORD_BCRYPT);
+
+            // Check if user already exists
+            $sql = "SELECT * FROM user_information WHERE user_id = ?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sss", $user_id, $hashed_password, $email);
+            $stmt->bind_param("s", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-            if ($stmt->execute()) {
-                // Send a confirmation email using PHPMailer
-                require 'PHPMailer/PHPMailerAutoload.php';
-                $mail = new PHPMailer;
-                $mail->isSMTP();
-                $mail->Host = $smtp_host;
-                $mail->SMTPAuth = true;
-                $mail->Username = $sender_email;
-                $mail->Password = $sender_password;
-                $mail->SMTPSecure = 'tls';
-                $mail->Port = $smtp_port;
-
-                $mail->setFrom($sender_email, 'Crypto Express');
-                $mail->addAddress($email);
-                $mail->Subject = "Welcome to Crypto Express!";
-                $mail->Body = "Hello $user_id,\n\nThank you for registering at Crypto Express. We are excited to have you on board!\n\n- The Crypto Express Team";
-
-                if (!$mail->send()) {
-                    $error_message = "Registration successful, but failed to send confirmation email.";
-                }
-
-                // Registration successful, redirect to confirmation page regardless of email status
-                header("Location: registration_success.php");
-                exit();
+            if ($result->num_rows > 0) {
+                $error_message = "Username already exists. Please choose another.";
             } else {
-                $error_message = "Registration failed. Please try again.";
+                // Insert new user into the database
+                $sql = "INSERT INTO user_information (user_id, user_password, email) VALUES (?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sss", $user_id, $hashed_password, $email);
+
+                if ($stmt->execute()) {
+                    // Send a confirmation email using PHPMailer
+                    require 'PHPMailer/PHPMailerAutoload.php';
+                    $mail = new PHPMailer;
+                    $mail->isSMTP();
+                    $mail->Host = $smtp_host;
+                    $mail->SMTPAuth = true;
+                    $mail->Username = $sender_email;
+                    $mail->Password = $sender_password;
+                    $mail->SMTPSecure = 'tls';
+                    $mail->Port = $smtp_port;
+
+                    $mail->setFrom($sender_email, 'Crypto Express');
+                    $mail->addAddress($email);
+                    $mail->Subject = "Welcome to Crypto Express!";
+                    $mail->Body = "Hello $user_id,\n\nThank you for registering at Crypto Express. We are excited to have you on board!\n\n- The Crypto Express Team";
+
+                    if (!$mail->send()) {
+                        $error_message = "Registration successful, but failed to send confirmation email.";
+                    }
+
+                    // Registration successful, redirect to confirmation page regardless of email sending
+                    header("Location: register_success.php");
+                    exit();
+                } else {
+                    $error_message = "Error occurred while registering. Please try again.";
+                }
             }
         }
     }
+
+    $stmt->close();
 }
+
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -98,18 +113,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding: 0;
         }
 
+        /* Dark Blue Banner */
         header {
             background-color: #2c3e50;
             padding: 20px;
             text-align: center;
         }
 
-        header h1 {
+        header a {
+            text-decoration: none;
             color: #ecf0f1;
             font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
         }
 
-        .container {
+        /* Main Registration Container */
+        .register-container {
             max-width: 500px;
             margin: 50px auto;
             padding: 20px;
@@ -118,11 +138,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .container h2 {
+        .register-container h2 {
             text-align: center;
             margin-bottom: 20px;
         }
 
+        /* Form input styling */
         input[type="text"], input[type="password"], input[type="email"] {
             width: 100%;
             padding: 10px;
@@ -154,13 +175,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-bottom: 20px;
         }
 
-        .success-message {
-            color: green;
-            font-size: 1rem;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
         .form-footer {
             text-align: center;
             margin-top: 20px;
@@ -173,40 +187,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
-
+    <!-- Crypto Express logo link -->
     <header>
-        <h1>Crypto Express</h1>
+        <a href="index.php">Crypto Express</a>
     </header>
 
-    <div class="container">
+    <!-- Registration Form -->
+    <div class="register-container">
         <h2>Create an Account</h2>
 
-        <!-- Error message -->
-        <?php if (!empty($error_message)): ?>
+        <!-- Display error message if exists -->
+        <?php if (!empty($error_message)) { ?>
             <div class="error-message"><?php echo $error_message; ?></div>
-        <?php endif; ?>
+        <?php } ?>
 
-        <form method="POST" action="">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
-
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" required>
-
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
-
-            <label for="confirm-password">Confirm Password</label>
-            <input type="password" id="confirm-password" name="confirm-password" required>
-
+        <form action="register.php" method="POST">
+            <input type="text" name="username" placeholder="Username" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <input type="password" name="confirm-password" placeholder="Confirm Password" required><br>
+            <input type="email" name="email" placeholder="Email" required><br>
             <input type="submit" value="Register">
         </form>
-
-        <div class="form-footer">
-            <p>Already have an account? <a href="login.php">Login here</a></p>
-        </div>
     </div>
-
 </body>
 </html>
 
