@@ -113,56 +113,64 @@ $conn->close();
         #search-input {
             padding: 10px;
             width: 70%;
-            border: 1px solid #ccc;
-            border-radius: 4px;
             margin-right: 10px;
         }
 
         #search-btn {
             padding: 10px;
             background-color: #f39c12;
-            border: none;
             color: white;
+            border: none;
             cursor: pointer;
-            border-radius: 4px;
         }
 
-        #search-btn:hover {
-            background-color: #e67e22;
+        #crypto-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
-        /* Crypto Item styling */
         .crypto-item {
-            padding: 15px;
-            margin: 10px 0;
-            background-color: #ffffff;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 200px;
+            text-align: center;
         }
 
         .crypto-item h3 {
-            color: #27ae60; /* Green for crypto names */
-            font-size: 1.25rem;
-            margin: 0;
+            margin: 10px 0;
+            font-size: 1.2rem;
         }
 
         .crypto-item p {
             font-size: 1rem;
-            color: #333;
-            margin: 5px 0;
-            text-align: center;
+            color: #27ae60;
+            margin-bottom: 10px;
         }
 
-        .favorite-btn {
+        .crypto-item .favorite-btn {
             padding: 5px 10px;
             background-color: #f1c40f;
             border: none;
             cursor: pointer;
-            margin-top: 5px;
         }
 
-        .favorite-btn.active {
-            background-color: #e67e22;
+        /* Footer styles */
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+
+        footer p {
+            margin: 0;
         }
     </style>
 </head>
@@ -180,7 +188,6 @@ $conn->close();
             <ul class="nav-right">
                 <li><a href="login.php">Login</a></li>
                 <li><a href="register.php">Register</a></li>
-                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
@@ -192,14 +199,42 @@ $conn->close();
                 <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
                 <button id="search-btn" onclick="searchCrypto()">Search</button>
             </div>
+
             <div id="crypto-list">
-                <!-- Cryptocurrency data will be injected here dynamically -->
+                <!-- Sample cryptocurrency data displayed -->
+                <?php foreach ($cryptoData as $crypto): ?>
+                    <div class="crypto-item">
+                        <h3><?= $crypto['name'] ?> (<?= $crypto['name_abreviation'] ?>)</h3>
+                        <p>$<?= number_format($crypto['price'], 2) ?></p>
+                        <button class="favorite-btn">Add to Favorites</button>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </section>
     </main>
 
+    <footer>
+        <p>&copy; 2024 Crypto Express. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Dummy search function for demonstration purposes
+        function searchCrypto() {
+            let searchQuery = document.getElementById('search-input').value.toLowerCase();
+            let cryptoItems = document.querySelectorAll('.crypto-item');
+            cryptoItems.forEach(item => {
+                let name = item.querySelector('h3').textContent.toLowerCase();
+                if (name.includes(searchQuery)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>
+
 
 
 
