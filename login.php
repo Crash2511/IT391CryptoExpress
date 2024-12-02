@@ -81,6 +81,14 @@ $conn->close();
             margin: 0;
         }
 
+        header a {
+            text-decoration: none;
+            color: #ecf0f1;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
         /* Main Login Container */
         .login-container {
             max-width: 400px;
@@ -98,8 +106,7 @@ $conn->close();
         }
 
         /* Form input styling */
-        .login-container input[type="text"], 
-        .login-container input[type="password"] {
+        .login-container input[type="text"], .login-container input[type="password"] {
             width: 100%;
             padding: 12px;
             margin: 10px 0;
@@ -109,8 +116,7 @@ $conn->close();
             font-size: 16px;
         }
 
-        .login-container input[type="text"]:focus, 
-        .login-container input[type="password"]:focus {
+        .login-container input[type="text"]:focus, .login-container input[type="password"]:focus {
             border-color: #3498db;
             outline: none;
         }
@@ -131,18 +137,24 @@ $conn->close();
             background-color: #2980b9;
         }
 
-        /* Additional Links */
-        .additional-links {
+        .button-container {
             text-align: center;
+            margin-top: 10px;
+        }
+
+        .button-container a {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1rem;
             margin-top: 20px;
         }
 
-        .additional-links a {
-            color: #3498db;
-            text-decoration: none;
-            font-size: 1rem;
-            display: block;
-            margin: 5px 0;
+        .button-container a:hover {
+            background-color: #2980b9;
         }
 
         .error-message {
@@ -151,31 +163,48 @@ $conn->close();
             text-align: center;
             margin-bottom: 20px;
         }
+
+        .success-message {
+            color: green;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .form-footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Crypto Express</h1>
+    <a href="index.php">Crypto Express</a>
 </header>
 
 <div class="login-container">
     <h2>Login</h2>
-
-    <?php
-    if (isset($error_message)) {
-        echo '<div class="error-message">' . $error_message . '</div>';
-    }
-    ?>
-
-    <form action="" method="POST">
+    <!-- Error message display -->
+    <?php if (isset($error_message)): ?>
+        <div class="error-message"><?= $error_message; ?></div>
+    <?php endif; ?>
+    
+    <form method="POST" action="">
         <input type="text" name="username" placeholder="Username" required>
         <input type="password" name="password" placeholder="Password" required>
         <input type="submit" value="Login">
     </form>
 
-    <div class="additional-links">
-        <a href="register.php">Don't have an account? Register</a>
+    <div class="button-container">
+        <a href="register.php">Register</a>
+    </div>
+    <div class="form-footer">
         <a href="forgot_password.php">Forgot Password?</a>
     </div>
 </div>
