@@ -41,7 +41,7 @@ $conn->close();
             padding: 0;
         }
 
-        /* Reverting the home bar color and size */
+        /* Green header */
         header {
             background-color: #27ae60; /* Green color for the header */
             padding: 20px;
@@ -112,61 +112,64 @@ $conn->close();
 
         #search-input {
             padding: 10px;
-            width: 70%;
+            width: 80%;
             margin-right: 10px;
         }
 
         #search-btn {
             padding: 10px;
-            background-color: #f39c12;
-            color: white;
-            border: none;
             cursor: pointer;
         }
 
-        #crypto-list {
+        /* Table styling */
+        .crypto-list {
+            margin: 20px 0;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
         }
 
         .crypto-item {
-            background-color: white;
-            padding: 20px;
-            margin: 10px;
+            background-color: #ffffff;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 200px;
+            margin: 10px;
+            padding: 20px;
             text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 200px;
         }
 
         .crypto-item h3 {
-            margin: 10px 0;
             font-size: 1.2rem;
+            color: #2c3e50;
         }
 
         .crypto-item p {
             font-size: 1rem;
             color: #27ae60;
-            margin-bottom: 10px;
+            margin: 10px 0;
         }
 
-        .crypto-item .favorite-btn {
-            padding: 5px 10px;
-            background-color: #f1c40f;
+        .crypto-item button {
+            padding: 10px;
+            background-color: #27ae60;
+            color: white;
             border: none;
             cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
         }
 
-        /* Footer styles */
+        .crypto-item button:hover {
+            background-color: #2ecc71;
+        }
+
+        /* Footer */
         footer {
             background-color: #2c3e50;
-            color: white;
-            padding: 20px;
+            color: #ffffff;
+            padding: 10px;
             text-align: center;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
         }
 
         footer p {
@@ -194,19 +197,19 @@ $conn->close();
 
     <main>
         <section id="market-overview">
-            <h2>Market Overview</h2>
+            <h2>Cryptocurrency Market</h2>
+
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
-                <button id="search-btn" onclick="searchCrypto()">Search</button>
+                <input type="text" id="search-input" placeholder="Search cryptocurrencies...">
+                <button id="search-btn">Search</button>
             </div>
 
-            <div id="crypto-list">
-                <!-- Sample cryptocurrency data displayed -->
+            <div class="crypto-list">
                 <?php foreach ($cryptoData as $crypto): ?>
                     <div class="crypto-item">
-                        <h3><?= $crypto['name'] ?> (<?= $crypto['name_abreviation'] ?>)</h3>
-                        <p>$<?= number_format($crypto['price'], 2) ?></p>
-                        <button class="favorite-btn">Add to Favorites</button>
+                        <h3><?php echo $crypto['name']; ?> (<?php echo $crypto['name_abreviation']; ?>)</h3>
+                        <p>Price: $<?php echo number_format($crypto['price'], 2); ?></p>
+                        <button>Add to Portfolio</button>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -214,24 +217,8 @@ $conn->close();
     </main>
 
     <footer>
-        <p>&copy; 2024 Crypto Express. All Rights Reserved.</p>
+        <p>&copy; 2024 Crypto Express</p>
     </footer>
-
-    <script>
-        // Dummy search function for demonstration purposes
-        function searchCrypto() {
-            let searchQuery = document.getElementById('search-input').value.toLowerCase();
-            let cryptoItems = document.querySelectorAll('.crypto-item');
-            cryptoItems.forEach(item => {
-                let name = item.querySelector('h3').textContent.toLowerCase();
-                if (name.includes(searchQuery)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        }
-    </script>
 </body>
 </html>
 
