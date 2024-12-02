@@ -47,7 +47,8 @@ if ($result->num_rows > 0) {
         ];
     }
 } else {
-    echo "No portfolio data found for the user.";  // Error message when no data is found
+    // No portfolio data or user not logged in
+    $portfolio_data = null;
 }
 
 $stmt->close();
@@ -84,6 +85,14 @@ $conn->close();
 
     <main>
         <section id="portfolio">
+            <!-- Show message if no portfolio data is available -->
+            <?php if ($portfolio_data === null) { ?>
+                <div id="no-portfolio-message">
+                    <h2>No portfolio data found or user not logged in</h2>
+                </div>
+            <?php } ?>
+
+            <!-- Detailed portfolio -->
             <h2>Your Portfolio (Detailed)</h2>
             <table id="portfolio-table">
                 <thead>
@@ -97,7 +106,7 @@ $conn->close();
                 <tbody id="portfolio-list">
                     <?php
                     // Loop through portfolio data and populate the table
-                    if (count($portfolio_data) > 0) {
+                    if ($portfolio_data !== null && count($portfolio_data) > 0) {
                         foreach ($portfolio_data as $portfolio_item) {
                             echo "<tr>
                                     <td>{$portfolio_item['asset']}</td>
@@ -204,7 +213,6 @@ $conn->close();
     </script>
 </body>
 </html>
-
 
 
 
