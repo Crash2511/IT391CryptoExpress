@@ -1,6 +1,10 @@
 <?php
 session_start();
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     echo "<p>You need to log in to view your portfolio. Once you log in and have an account, this page will be filled with your portfolio data.</p>";
@@ -23,13 +27,16 @@ if ($conn->connect_error) {
 // Fetch portfolio data
 $sql = "SELECT name, name_abreviation, amount, price FROM portfolio_information INNER JOIN crypto_information ON portfolio_information.crypto_id = crypto_information.id WHERE user_id = ?";
 $stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
 $stmt->bind_param("s", $_SESSION['user_id']);
 $stmt->execute();
 $result = $stmt->get_result();
 $portfolioData = [];
 
 if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
+    while ($row = $result->fetch_assoc()) {
         $portfolioData[] = $row;
     }
 }
@@ -38,13 +45,16 @@ $stmt->close();
 // Fetch trade history
 $sql = "SELECT crypto_information.name, crypto_information.name_abreviation, transaction_type, amount, price, timestamp FROM transaction_history INNER JOIN crypto_information ON transaction_history.crypto_id = crypto_information.id WHERE user_id = ? ORDER BY timestamp DESC";
 $stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
 $stmt->bind_param("s", $_SESSION['user_id']);
 $stmt->execute();
 $result = $stmt->get_result();
 $tradeData = [];
 
 if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
+    while ($row = $result->fetch_assoc()) {
         $tradeData[] = $row;
     }
 }
@@ -130,14 +140,14 @@ $conn->close();
                             <tr>
                                 <td><?= htmlspecialchars($asset['name']) ?> (<?= htmlspecialchars($asset['name_abreviation']) ?>)</td>
                                 <td class="amount"><?= number_format($asset['amount'], 2) ?></td>
-                                <td class="price">\$<?= number_format($asset['price'], 2) ?></td>
-                                <td class="value">\$<?= number_format($assetValue, 2) ?></td>
+                                <td class="price">$<?= number_format($asset['price'], 2) ?></td>
+                                <td class="value">$<?= number_format($assetValue, 2) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
                 <div id="portfolio-summary">
-                    <h3>Total Portfolio Value: <span id="total-value" class="value">\$<?= number_format($totalValue, 2) ?></span></h3>
+                    <h3>Total Portfolio Value: <span id="total-value" class="value">$<?= number_format($totalValue, 2) ?></span></h3>
                 </div>
             <?php endif; ?>
         </section>
@@ -165,7 +175,7 @@ $conn->close();
                                     <?= ucfirst(htmlspecialchars($trade['transaction_type'])) ?>
                                 </td>
                                 <td class="amount"><?= number_format($trade['amount'], 2) ?></td>
-                                <td class="price">\$<?= number_format($trade['price'], 2) ?></td>
+                                <td class="price">$<?= number_format($trade['price'], 2) ?></td>
                                 <td><?= htmlspecialchars($trade['timestamp']) ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -178,5 +188,8 @@ $conn->close();
     <footer>
         <p>&copy; 2024 Crypto Express</p>
     </footer>
+</body>
+</html>
+
 </body>
 </html>
