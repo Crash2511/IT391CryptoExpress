@@ -52,89 +52,111 @@ $conn->close();
     <title>Login - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Form container styling */
-        form {
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f9fb;
+            margin: 0;
+            padding: 0;
+        }
+
+        .login-container {
             max-width: 400px;
             margin: 50px auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
         }
 
-        /* Input styling */
-        input[type="text"], input[type="password"] {
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Form input styling */
+        .login-container input[type="text"], .login-container input[type="password"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .login-container input[type="text"]:focus, .login-container input[type="password"]:focus {
+            border-color: #3498db;
+            outline: none;
         }
 
         /* Button styling */
-        button {
-            display: block;
+        .login-container button {
             width: 100%;
-            padding: 10px;
-            background-color: #343a40;
+            padding: 12px;
+            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
         }
 
-        button:hover {
-            background-color: #495057;
+        .login-container button:hover {
+            background-color: #2980b9;
         }
 
-        /* Form heading and link styling */
-        h2 {
+        /* Error message styling */
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        /* Links styling */
+        .login-container p {
             text-align: center;
         }
 
-        p {
-            text-align: center;
+        .login-container p a {
+            color: #3498db;
+            text-decoration: none;
         }
 
-        /* Additional styling for reset password link */
-        .reset-link {
-            text-align: center;
-            margin-top: 10px;
+        .login-container p a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive design */
+        @media screen and (max-width: 600px) {
+            .login-container {
+                padding: 20px;
+                margin: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1><a href="index.php">Crypto Express</a></h1>
-    </header>
 
-    <main>
-        <h2>Login</h2>
-        <form id="login-form" method="POST" action="login.php">
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
+<div class="login-container">
+    <h2>Login to Crypto Express</h2>
 
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
+    <!-- Show error message if any -->
+    <?php if (isset($error_message)): ?>
+        <div class="error-message"><?php echo $error_message; ?></div>
+    <?php endif; ?>
 
-            <?php
-            if (!empty($error_message)) {
-                echo "<p style='color: red;'>$error_message</p>";
-            }
-            ?>
+    <!-- Login Form -->
+    <form action="" method="POST">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
 
-            <button type="submit">Login</button>
-            <div class="reset-link">
-                <p><a href="reset-password.html">Forgot Password?</a></p>
-            </div>
-        </form>
-        <p>Don't have an account? <a href="register.html">Register here</a>.</p>
-    </main>
+    <p>Don't have an account? <a href="register.php">Sign up here</a></p>
+</div>
 
-    <footer>
-        <p>&copy; 2024 Crypto Express</p>
-    </footer>
 </body>
 </html>
 
