@@ -47,6 +47,7 @@ $conn->close();
             background-color: #343a40;
             color: white;
             text-transform: uppercase;
+            cursor: pointer;
         }
 
         #leaderboard-table tbody tr:nth-child(odd) {
@@ -83,6 +84,10 @@ $conn->close();
             text-align: center;
             margin-bottom: 20px;
         }
+
+        .sort-arrow {
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -108,12 +113,18 @@ $conn->close();
     <table id="leaderboard-table">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>User ID</th>
-                <th>Account Balance</th>
+                <th id="rank-header" onclick="sortLeaderboard('rank')">
+                    Rank<span class="sort-arrow" id="rank-arrow">▲</span>
+                </th>
+                <th id="user-header" onclick="sortLeaderboard('user')">
+                    User ID<span class="sort-arrow" id="user-arrow">▲</span>
+                </th>
+                <th id="value-header" onclick="sortLeaderboard('value')">
+                    Account Balance<span class="sort-arrow" id="value-arrow">▲</span>
+                </th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="leaderboard-body">
             <?php
                 $rank = 1;
                 foreach ($leaderboardData as $data) {
@@ -131,8 +142,62 @@ $conn->close();
     <footer>
         <p>&copy; 2024 Crypto Express. All rights reserved.</p>
     </footer>
+
+    <script>
+        let currentSortColumn = 'rank'; // default sort by rank
+        let isAscending = true; // default sort order is ascending
+
+        function updateSortIcons() {
+            document.getElementById('rank-arrow').textContent = currentSortColumn === 'rank' ? (isAscending ? '▲' : '▼') : '▲';
+            document.getElementById('user-arrow').textContent = currentSortColumn === 'user' ? (isAscending ? '▲' : '▼') : '▲';
+            document.getElementById('value-arrow').textContent = currentSortColumn === 'value' ? (isAscending ? '▲' : '▼') : '▲';
+        }
+
+        function sortLeaderboard(column) {
+            // Toggle the sorting order if the same column is clicked
+            if (currentSortColumn === column) {
+                isAscending = !isAscending;
+            } else {
+                currentSortColumn = column;
+                isAscending = true;
+            }
+            updateSortIcons();
+            sortTable();
+        }
+
+        function sortTable() {
+            const table = document.getElementById('leaderboard-table');
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+
+            rows.sort((a, b) => {
+                let cellA, cellB;
+
+                switch (currentSortColumn) {
+                    case 'rank':
+                        cellA = a.querySelector('td:nth-child(1)').textContent;
+                        cellB = b.querySelector('td:nth-child(1)').textContent;
+                        break;
+                    case 'user':
+                        cellA = a.querySelector('td:nth-child(2)').textContent;
+                        cellB = b.querySelector('td:nth-child(2)').textContent;
+                        break;
+                    case 'value':
+                        cellA = parseFloat(a.querySelector('td:nth-child(3)').textContent.replace(/[^0-9.-]+/g, ""));
+                        cellB = parseFloat(b.querySelector('td:nth-child(3)').textContent.replace(/[^0-9.-]+/g, ""));
+                        break;
+                }
+
+                return isAscending ? (cellA > cellB ? 1 : -1) : (cellA < cellB ? 1 : -1);
+            });
+
+            rows.forEach(row => {
+                document.getElementById('leaderboard-body').appendChild(row);
+            });
+        }
+    </script>
 </body>
 </html>
+
 
 
 
