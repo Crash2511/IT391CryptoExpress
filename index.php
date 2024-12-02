@@ -66,6 +66,14 @@ if ($conn->connect_error) {
                 <li><a href="login.php">Login</a></li>
                 <li><a href="register.php">Register</a></li>
                 <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
+            <?php
+            // Show logout button only if the user is logged in
+            if (isset($_SESSION['user_id'])) {
+                echo '<form method="POST" action="logout.php">
+                        <button type="submit" name="logout" class="logout-button">Logout</button>
+                      </form>';
+            }
+            ?>
             </ul>
         </nav>
     </header>
