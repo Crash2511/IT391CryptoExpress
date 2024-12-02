@@ -11,7 +11,7 @@ $dbname = "crypto_express";
 // Connect to the database
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection and display errors only if in development environment
+// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -98,7 +98,8 @@ $conn->close();
         }
 
         /* Form input styling */
-        .login-container input[type="text"], .login-container input[type="password"] {
+        .login-container input[type="text"], 
+        .login-container input[type="password"] {
             width: 100%;
             padding: 12px;
             margin: 10px 0;
@@ -108,12 +109,13 @@ $conn->close();
             font-size: 16px;
         }
 
-        .login-container input[type="text"]:focus, .login-container input[type="password"]:focus {
+        .login-container input[type="text"]:focus, 
+        .login-container input[type="password"]:focus {
             border-color: #3498db;
             outline: none;
         }
 
-        /* Submit button styling */
+        /* Button styling */
         .login-container input[type="submit"] {
             width: 100%;
             padding: 12px;
@@ -129,60 +131,55 @@ $conn->close();
             background-color: #2980b9;
         }
 
-        /* Error message styling */
-        .error-message {
-            color: red;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* Forgot password link */
-        .forgot-password {
+        /* Additional Links */
+        .additional-links {
             text-align: center;
             margin-top: 20px;
         }
 
-        .forgot-password a {
+        .additional-links a {
             color: #3498db;
             text-decoration: none;
+            font-size: 1rem;
+            display: block;
+            margin: 5px 0;
         }
 
-        .forgot-password a:hover {
-            text-decoration: underline;
+        .error-message {
+            color: red;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <!-- Header with the title -->
-    <header>
-        <h1>Crypto Express</h1>
-    </header>
 
-    <!-- Main login container -->
-    <div class="login-container">
-        <h2>Login</h2>
-        
-        <!-- Error message if any -->
-        <?php if (isset($error_message)): ?>
-            <div class="error-message"><?= $error_message ?></div>
-        <?php endif; ?>
+<header>
+    <h1>Crypto Express</h1>
+</header>
 
-        <form method="POST" action="">
-            <!-- Username input -->
-            <input type="text" name="username" placeholder="Username" required><br>
+<div class="login-container">
+    <h2>Login</h2>
 
-            <!-- Password input -->
-            <input type="password" name="password" placeholder="Password" required><br>
+    <?php
+    if (isset($error_message)) {
+        echo '<div class="error-message">' . $error_message . '</div>';
+    }
+    ?>
 
-            <!-- Submit button -->
-            <input type="submit" value="Login">
-        </form>
+    <form action="" method="POST">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="submit" value="Login">
+    </form>
 
-        <!-- Forgot Password link -->
-        <div class="forgot-password">
-            <a href="forgot-password.php">Forgot your password?</a>
-        </div>
+    <div class="additional-links">
+        <a href="register.php">Don't have an account? Register</a>
+        <a href="forgot_password.php">Forgot Password?</a>
     </div>
+</div>
+
 </body>
 </html>
 
