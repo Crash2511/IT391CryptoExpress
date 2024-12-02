@@ -22,6 +22,33 @@ if ($conn->connect_error) {
     <link rel="stylesheet" href="styles.css">
     <style>
         <?php include 'styles.css'; // Include your existing CSS ?>
+        .summary-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border: 1px solid #ddd;
+            text-align: center;
+            border-radius: 8px;
+        }
+        table.stock-chart {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table.stock-chart th, table.stock-chart td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        table.stock-chart th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -67,31 +94,39 @@ if ($conn->connect_error) {
         <!-- Market Overview Section -->
         <section id="market-overview">
             <h2>Market Overview</h2>
-            <div id="crypto-list">
-                <?php
-                $sql = "SELECT * FROM crypto_information";
-                $result = $conn->query($sql);
+            <table class="stock-chart">
+                <thead>
+                    <tr>
+                        <th>Cryptocurrency</th>
+                        <th>Price (USD)</th>
+                        <th>Change (USD)</th>
+                        <th>Change (%)</th>
+                        <th>Market Cap</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $sql = "SELECT * FROM crypto_information";
+                    $result = $conn->query($sql);
 
-                if ($result->num_rows > 0) {
-                    // Output data for each row
-                    while($row = $result->fetch_assoc()) {
-                        echo "
-                        <div class='crypto-item'>
-                            <img src='https://via.placeholder.com/50' alt='{$row['name']} logo'>
-                            <div class='crypto-item-details'>
-                                <span class='crypto-item-name'>{$row['name']} ({$row['name_abreviation']})</span>
-                                <span class='crypto-item-price'>Price: \${$row['price']}</span>
-                                <span>Change: \${$row['price_change']} ({$row['change_percent']}%)</span>
-                                <span>Market Cap: {$row['market_cap']}</span>
-                                <span>Volume: {$row['volume']}</span>
-                            </div>
-                        </div>";
+                    if ($result->num_rows > 0) {
+                        while($row = $result->fetch_assoc()) {
+                            echo "<tr>
+                                <td>" . htmlspecialchars($row['name']) . " (" . htmlspecialchars($row['name_abreviation']) . ")</td>
+                                <td>$" . htmlspecialchars($row['price']) . "</td>
+                                <td>$" . htmlspecialchars($row['price_change']) . "</td>
+                                <td>" . htmlspecialchars($row['change_percent']) . "%</td>
+                                <td>" . htmlspecialchars($row['market_cap']) . "</td>
+                                <td>" . htmlspecialchars($row['volume']) . "</td>
+                            </tr>";
+                        }
+                    } else {
+                        echo "<tr><td colspan='6'>No data available.</td></tr>";
                     }
-                } else {
-                    echo "No data available.";
-                }
-                ?>
-            </div>
+                    ?>
+                </tbody>
+            </table>
         </section>
 
         <!-- Portfolio Section in Index Page -->
@@ -125,7 +160,7 @@ if ($conn->connect_error) {
                     $result = $conn->query($sql);
                     if ($result->num_rows > 0) {
                         while($row = $result->fetch_assoc()) {
-                            echo "<option value='{$row['name_abreviation']}'>{$row['name']} ({$row['name_abreviation']})</option>";
+                            echo "<option value='" . htmlspecialchars($row['name_abreviation']) . "'>" . htmlspecialchars($row['name']) . " (" . htmlspecialchars($row['name_abreviation']) . ")</option>";
                         }
                     }
                     ?>
@@ -184,3 +219,4 @@ if ($conn->connect_error) {
 // Close the database connection
 $conn->close();
 ?>
+
