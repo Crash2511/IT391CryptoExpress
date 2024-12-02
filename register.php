@@ -68,13 +68,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $mail->Subject = "Welcome to Crypto Express!";
                 $mail->Body = "Hello $user_id,\n\nThank you for registering at Crypto Express. We are excited to have you on board!\n\n- The Crypto Express Team";
 
-                if ($mail->send()) {
-                    // Registration successful, redirect to confirmation page
-                    header("Location: registration_success.php");
-                    exit();
-                } else {
+                if (!$mail->send()) {
                     $error_message = "Registration successful, but failed to send confirmation email.";
                 }
+
+                // Registration successful, redirect to confirmation page regardless of email status
+                header("Location: registration_success.html");
+                exit();
             } else {
                 $error_message = "Registration failed. Please try again.";
             }
@@ -178,53 +178,8 @@ $conn->close();
 </body>
 </html>
 
-<?php
-// registration_success.php content
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Successful - Crypto Express</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Center content styling */
-        .success-container {
-            max-width: 600px;
-            margin: 100px auto;
-            padding: 30px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            text-align: center;
-        }
 
-        h2 {
-            color: #28a745;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1><a href="index.php">Crypto Express</a></h1>
-    </header>
-
-    <main>
-        <div class="success-container">
-            <h2>Registration Successful!</h2>
-            <p>Thank you for registering with Crypto Express. A confirmation email has been sent to your email address.</p>
-            <p>Please check your inbox and confirm your registration.</p>
-            <a href="login.php">Go to Login</a>
-        </div>
-    </main>
-
-    <footer>
-        <p>&copy; 2024 Crypto Express</p>
-    </footer>
-</body>
-</html>
 
 
 
