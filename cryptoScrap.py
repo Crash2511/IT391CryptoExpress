@@ -9,11 +9,34 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from datetime import datetime, timezone
+from sqlalchemy import create_engine, Table, Column, String, MetaData, Float, DateTime
+import pymysql
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Function to scrape a single cryptocurrency
+# Database connection URL
+db_url = 'mysql+pymysql://user:password@localhost/crypto_express'
+engine = create_engine(db_url)
+metadata = MetaData()
+
+# Define a table to store cryptocurrency data
+crypto_table = Table('crypto_data', metadata,
+    Column('name', String(50)),
+    Column('price', Float),
+    Column('price_change', Float),
+    Column('change_percent', Float),
+    Column('previous_close', String(50)),
+    Column('open', String(50)),
+    Column('price_low', Float),
+    Column('price_high', Float),
+    Column('market_cap', String(50)),
+    Column('circulating_supply', Float),
+    Column('volume', Float),
+    Column('trade_time', DateTime)
+)
+metadata.create_all(engine)
+
 def scrape_crypto(driver, symbol):
     """Scrape cryptocurrency data from Yahoo Finance."""
     url = f'https://finance.yahoo.com/quote/{symbol}'
@@ -75,7 +98,7 @@ def create_driver():
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    service = ChromeService('/usr/bin/chromedriver')
+    service = ChromeService('/usr/bin/chromedriver')  # Update the path to chromedriver
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
@@ -98,25 +121,41 @@ def scrape_all_cryptos(crypto_list):
             driver.quit()
     return results
 
+# Function to insert scraped data into the database
+def insert_into_db(scraped_data):
+    with engine.connect() as connection:
+        for data in scraped_data:
+            insert_stmt = crypto_table.insert().values(
+                name=data['name'],
+                price=data['price'],
+                price_change=data['price_change'],
+                change_percent=data['change_percent'],
+                previous_close=data['previous_close'],
+                open=data['open'],
+                price_low=data['price_low'],
+                price_high=data['price_high'],
+                market_cap=data['market_cap'],
+                circulating_supply=data['circulating_supply'],
+                volume=data['volume'],
+                trade_time=data['trade_time']
+            )
+            connection.execute(insert_stmt)
+
 if __name__ == '__main__':
     # List of cryptocurrencies to scrape
     mycrypto = [
-        'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD', 'BNB-USD',
-        'SHIB-USD', 'DOT-USD', 'LTC-USD', 'AVAX-USD', 'ATOM-USD', 'TRX-USD', 'UNI-USD',
-        'BCH-USD', 'XLM-USD', 'ICP-USD', 'HBAR-USD', 'VET-USD', 'MATIC-USD', 'FIL-USD',
-        'LINK-USD', 'SUI-USD', 'APT-USD', 'ETC-USD', 'NEAR-USD', 'PEPE-USD', 'CRO-USD',
-        'LEO-USD', 'ARB-USD', 'STX-USD', 'KAS-USD', 'FET-USD', 'IMX-USD', 'WBT-USD',
-        'OKB-USD', 'OM-USD', 'TIA-USD', 'BONK-USD'
+        'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD', 'BNB-USD'
     ]
 
     # Scrape all cryptocurrencies
     scraped_data = scrape_all_cryptos(mycrypto)
 
+    # Insert the scraped data into the database
+    insert_into_db(scraped_data)
+
     # Output results
     for data in scraped_data:
         logging.info(data)
-
-
 
 
 
