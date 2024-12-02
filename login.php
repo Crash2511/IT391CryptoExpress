@@ -11,7 +11,7 @@ $dbname = "crypto_express";
 // Connect to the database
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
+// Check connection and display errors only if in development environment
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -104,6 +104,7 @@ $conn->close();
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
+            box-sizing: border-box;
             font-size: 16px;
         }
 
@@ -128,52 +129,61 @@ $conn->close();
             background-color: #2980b9;
         }
 
-        /* Forgot password link */
-        .forgot-password {
-            display: block;
-            text-align: center;
-            margin-top: 10px;
-            color: #3498db;
-            text-decoration: none;
-        }
-
-        .forgot-password:hover {
-            text-decoration: underline;
-        }
-
+        /* Error message styling */
         .error-message {
             color: red;
-            font-size: 1rem;
             text-align: center;
             margin-bottom: 20px;
         }
 
+        /* Forgot password link */
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .forgot-password a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+    <!-- Header with the title -->
+    <header>
+        <h1>Crypto Express</h1>
+    </header>
 
-<header>
-    <h1>Crypto Express</h1>
-</header>
+    <!-- Main login container -->
+    <div class="login-container">
+        <h2>Login</h2>
+        
+        <!-- Error message if any -->
+        <?php if (isset($error_message)): ?>
+            <div class="error-message"><?= $error_message ?></div>
+        <?php endif; ?>
 
-<div class="login-container">
-    <h2>Login</h2>
+        <form method="POST" action="">
+            <!-- Username input -->
+            <input type="text" name="username" placeholder="Username" required><br>
 
-    <!-- Display error message if there is one -->
-    <?php if (isset($error_message)): ?>
-        <div class="error-message"><?= $error_message ?></div>
-    <?php endif; ?>
+            <!-- Password input -->
+            <input type="password" name="password" placeholder="Password" required><br>
 
-    <form method="POST" action="">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <input type="submit" value="Login">
-    </form>
+            <!-- Submit button -->
+            <input type="submit" value="Login">
+        </form>
 
-    <!-- Forgot password link -->
-    <a href="forgot_password.php" class="forgot-password">Forgot your password?</a>
-</div>
-
+        <!-- Forgot Password link -->
+        <div class="forgot-password">
+            <a href="forgot-password.php">Forgot your password?</a>
+        </div>
+    </div>
 </body>
 </html>
+
 
