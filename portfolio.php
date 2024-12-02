@@ -1,14 +1,8 @@
 <?php
-session_start();
-
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Database connection settings
+// Database connection
 $servername = "localhost";
-$username = "user";
-$password = "Battle2511!";
+$username = "root";
+$password = "your_password";
 $dbname = "crypto_express";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -18,45 +12,22 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Initialize empty arrays for portfolio and trade data
-$portfolioData = [];
-$tradeData = [];
+// Fetch portfolio data
+$sql = "SELECT * FROM portfolio_data";  // Change to your actual portfolio table
+$result = $conn->query($sql);
 
-// Fetch portfolio data if the user is logged in
-if (isset($_SESSION['user_id'])) {
-    $sql = "SELECT crypto_information.name, crypto_information.name_abreviation, portfolio_information.amount, crypto_information.price FROM portfolio_information INNER JOIN crypto_information ON portfolio_information.crypto_id = crypto_information.name WHERE portfolio_information.user_id = ?";
-    $stmt = $conn->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param("s", $_SESSION['user_id']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $portfolioData[] = $row;
-            }
-        }
-        $stmt->close();
-    }
-
-    // Fetch trade history
-    $sql = "SELECT crypto_information.name, crypto_information.name_abreviation, transaction_history.transaction_type, transaction_history.amount, transaction_history.price, transaction_history.timestamp FROM transaction_history INNER JOIN crypto_information ON transaction_history.trading_pair = crypto_information.name_abreviation WHERE transaction_history.user_id = ? ORDER BY transaction_history.timestamp DESC";
-    $stmt = $conn->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param("s", $_SESSION['user_id']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $tradeData[] = $row;
-            }
-        }
-        $stmt->close();
+$portfolio_data = [];
+if ($result->num_rows > 0) {
+    // Fetch each row and add to the portfolio_data array
+    while($row = $result->fetch_assoc()) {
+        $portfolio_data[] = [
+            'asset' => $row['asset'],
+            'amount' => $row['amount'],
+            'price' => $row['price']
+        ];
     }
 } else {
-    // Message to display when user is not logged in
-    $message = "Your portfolio will not be filled until you log in and start using the website.";
+    echo "0 results";
 }
 
 $conn->close();
@@ -67,133 +38,175 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio - Crypto Express</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Basic styling for tables */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
-        .message {
-            text-align: center;
-            margin: 20px;
-            font-size: 1.2rem;
-            color: #e74c3c;
-        }
-        .chart-container {
-            width: 80%;
-            margin: 0 auto;
-        }
-        /* Footer styling */
-        footer {
-            background-color: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-        }
-    </style>
+    <title>Your Portfolio - Crypto Express</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link your CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
 </head>
 <body>
     <header>
         <nav>
-            <h1><a href="index.php">Crypto Express</a></h1>
+            <h1><a href="index.html">Crypto Express</a></h1>
             <ul class="main-nav">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="portfolio.php">Portfolio</a></li>
-                <li><a href="market.php">Market</a></li>
-                <li><a href="leaderboard.php">Leaderboard</a></li>
-                <li><a href="settings.php">Settings</a></li>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="market.html">Market</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="settings.html">Settings</a></li>
             </ul>
             <ul class="nav-right">
-                <li><a href="login.php">Login</a></li>
-                <li><a href="register.php">Register</a></li>
-                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
 
     <main>
-        <section id="portfolio-overview">
-            <h2>Your Portfolio</h2>
-            <?php if (isset($message)) { ?>
-                <div class="message"><?php echo $message; ?></div>
-            <?php } ?>
-
-            <!-- Portfolio Table -->
-            <table>
+        <section id="portfolio">
+            <h2>Your Portfolio (Detailed)</h2>
+            <table id="portfolio-table">
                 <thead>
                     <tr>
-                        <th>Crypto Name</th>
-                        <th>Abbreviation</th>
-                        <th>Amount</th>
-                        <th>Price</th>
-                        <th>Value</th>
+                        <th>Asset</th>
+                        <th class="amount">Amount</th>
+                        <th class="price">Price</th>
+                        <th class="value">Value</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php foreach ($portfolioData as $item) { ?>
-                        <tr>
-                            <td><?php echo $item['name']; ?></td>
-                            <td><?php echo $item['name_abreviation']; ?></td>
-                            <td><?php echo $item['amount']; ?></td>
-                            <td><?php echo "$" . number_format($item['price'], 2); ?></td>
-                            <td><?php echo "$" . number_format($item['amount'] * $item['price'], 2); ?></td>
-                        </tr>
-                    <?php } ?>
+                <tbody id="portfolio-list">
+                    <?php
+                    // Generate portfolio table rows dynamically
+                    foreach ($portfolio_data as $portfolio_item) {
+                        $asset = $portfolio_item['asset'];
+                        $amount = $portfolio_item['amount'];
+                        $price = $portfolio_item['price']; // Assuming this is fetched from your table
+                        $value = $amount * $price; // Calculate total value
+                        echo "<tr>
+                                <td>{$asset}</td>
+                                <td class='amount'>{$amount}</td>
+                                <td class='price'>{$price}</td>
+                                <td class='value'>{$value}</td>
+                              </tr>";
+                    }
+                    ?>
                 </tbody>
             </table>
+            <div id="portfolio-summary">
+                <h3>Total Portfolio Value: <span id="total-value" class="value">$0.00</span></h3>
+            </div>
+        </section>
 
-            <!-- Graph Section -->
-            <div class="chart-container">
-                <canvas id="cryptoChart"></canvas>
+        <section id="last-trades">
+            <h2>Last Trades</h2>
+            <table id="trades-table">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Action</th>
+                        <th class="amount">Amount</th>
+                        <th class="price">Price</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="trades-list">
+                    <!-- JavaScript will populate this with trades -->
+                </tbody>
+            </table>
+        </section>
+
+        <section id="portfolio-graph">
+            <h2>Your Portfolio Performance</h2>
+
+            <!-- Dropdown to select cryptocurrency -->
+            <label for="crypto-filter">Select Cryptocurrency:</label>
+            <select id="crypto-filter" onchange="updateCryptoChart()">
+                <option value="all">All</option>
+                <option value="BTC">Bitcoin (BTC)</option>
+                <option value="ETH">Ethereum (ETH)</option>
+                <option value="ADA">Cardano (ADA)</option>
+            </select>
+
+            <!-- Time range buttons -->
+            <div class="time-range-buttons">
+                <button onclick="updateChart('1d')">1D</button>
+                <button onclick="updateChart('1w')">1W</button>
+                <button onclick="updateChart('1m')">1M</button>
+                <button onclick="updateChart('3m')">3M</button>
+                <button onclick="updateChart('1y')">1Y</button>
             </div>
 
-            <script>
-                var ctx = document.getElementById('cryptoChart').getContext('2d');
-                var chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ["1d", "1m", "1y"],
-                        datasets: [{
-                            label: 'Crypto Price History',
-                            data: [/* Add your data here */],
-                            borderColor: '#2ecc71',
-                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                            fill: true,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: false
-                            }
-                        }
-                    }
-                });
-            </script>
+            <canvas id="portfolioChart"></canvas>
         </section>
     </main>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2024 Crypto Express. All rights reserved.</p>
-    </footer>
+    <script>
+        const ctx = document.getElementById('portfolioChart').getContext('2d');
+        let portfolioChart;
+
+        // Placeholder function to simulate getting historical data
+        function fetchCryptoData(crypto, timeRange) {
+            // This can be replaced with an actual API call to fetch historical data for the selected crypto and time range.
+            const data = {
+                labels: ["2021-01", "2021-02", "2021-03", "2021-04", "2021-05"], // Example time labels
+                datasets: [{
+                    label: crypto + ' Price',
+                    data: [100, 120, 140, 130, 160], // Example price data (replace with actual data)
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1
+                }]
+            };
+            return data;
+        }
+
+        // Update chart based on selected cryptocurrency
+        function updateCryptoChart() {
+            const selectedCrypto = document.getElementById('crypto-filter').value;
+            const timeRange = '1w'; // Default to 1 week, could be dynamic based on user selection
+
+            const data = fetchCryptoData(selectedCrypto, timeRange);
+            
+            if (portfolioChart) {
+                portfolioChart.destroy();
+            }
+
+            portfolioChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                });
+        }
+
+        // Update chart based on time range
+        function updateChart(timeRange) {
+            const selectedCrypto = document.getElementById('crypto-filter').value;
+            const data = fetchCryptoData(selectedCrypto, timeRange);
+
+            if (portfolioChart) {
+                portfolioChart.destroy();
+            }
+
+            portfolioChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                });
+        }
+
+        // Initial chart render with default values
+        window.onload = function() {
+            updateCryptoChart();
+        }
+    </script>
 </body>
 </html>
 
