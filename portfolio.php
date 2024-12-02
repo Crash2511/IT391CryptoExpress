@@ -16,24 +16,41 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch portfolio data from the crypto_information table
-$sql = "SELECT * FROM crypto_information";  // Changed to your table
-$result = $conn->query($sql);
+// Fetch portfolio data by joining portfolio_information and crypto_information tables
+$sql = "SELECT ci.name, ci.price, pi.amount
+        FROM portfolio_information pi
+        JOIN crypto_information ci ON pi.crypto_id = ci.name
+        WHERE pi.user_id = ?";  // Added WHERE clause for user_id
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $user_id); // Bind the user_id parameter (replace with the actual user ID)
+$stmt->execute();
+$result = $stmt->get_result();
 
 $portfolio_data = [];
+$total_value = 0; // To accumulate the total value of the portfolio
+
 if ($result->num_rows > 0) {
     // Fetch each row and add to the portfolio_data array
     while ($row = $result->fetch_assoc()) {
+        $asset = $row['name'];
+        $amount = $row['amount'];
+        $price = $row['price'];
+        $value = $amount * $price; // Calculate the value of the asset
+        $total_value += $value;
+
         $portfolio_data[] = [
-            'asset' => $row['asset'],
-            'amount' => $row['amount'],
-            'price' => $row['price']
+            'asset' => $asset,
+            'amount' => $amount,
+            'price' => $price,
+            'value' => $value
         ];
     }
 } else {
-    echo "0 results";  // This will display if no data is returned from the database
+    echo "No portfolio data found for the user.";  // Error message when no data is found
 }
 
+$stmt->close();
 $conn->close();
 ?>
 
@@ -79,20 +96,14 @@ $conn->close();
                 </thead>
                 <tbody id="portfolio-list">
                     <?php
-                    // Check if portfolio_data is populated and create table rows dynamically
-                    $total_value = 0;  // To calculate total portfolio value
+                    // Loop through portfolio data and populate the table
                     if (count($portfolio_data) > 0) {
                         foreach ($portfolio_data as $portfolio_item) {
-                            $asset = $portfolio_item['asset'];
-                            $amount = $portfolio_item['amount'];
-                            $price = $portfolio_item['price'];
-                            $value = $amount * $price; // Calculate the portfolio value
-                            $total_value += $value;
                             echo "<tr>
-                                    <td>{$asset}</td>
-                                    <td class='amount'>{$amount}</td>
-                                    <td class='price'>{$price}</td>
-                                    <td class='value'>{$value}</td>
+                                    <td>{$portfolio_item['asset']}</td>
+                                    <td class='amount'>{$portfolio_item['amount']}</td>
+                                    <td class='price'>{$portfolio_item['price']}</td>
+                                    <td class='value'>{$portfolio_item['value']}</td>
                                   </tr>";
                         }
                     } else {
@@ -193,6 +204,7 @@ $conn->close();
     </script>
 </body>
 </html>
+
 
 
 
