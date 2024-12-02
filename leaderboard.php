@@ -30,6 +30,7 @@ $conn->close();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard - Crypto Express</title>
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -39,17 +40,17 @@ $conn->close();
             margin: 0 auto;
             border-collapse: collapse;
         }
-        
+
         #leaderboard-table th, #leaderboard-table td {
             padding: 15px;
             text-align: center;
+            cursor: pointer; /* Make headers clickable */
         }
 
         #leaderboard-table th {
             background-color: #343a40;
             color: white;
             text-transform: uppercase;
-            cursor: pointer; /* Make headers clickable */
         }
 
         #leaderboard-table tbody tr:nth-child(odd) {
@@ -87,17 +88,6 @@ $conn->close();
             margin-bottom: 20px;
         }
 
-        /* Style for sort arrows */
-        .sort-arrow {
-            margin-left: 5px;
-            font-size: 0.8em;
-        }
-
-        /* Style for the active sort column */
-        .active-sort {
-            text-decoration: underline;
-        }
-
         /* Footer styling */
         footer {
             background-color: #2c3e50;
@@ -108,6 +98,14 @@ $conn->close();
             bottom: 0;
             width: 100%;
         }
+
+        /* Style for mobile responsiveness */
+        @media (max-width: 768px) {
+            #leaderboard-table {
+                width: 100%;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -116,47 +114,64 @@ $conn->close();
             <h1><a href="index.php">Crypto Express</a></h1>
             <ul class="main-nav">
                 <li><a href="index.php">Home</a></li>
-                <li><a href="portfolio.php">Portfolio</a></li>
-                <li><a href="market.php">Market</a></li>
                 <li><a href="leaderboard.php">Leaderboard</a></li>
-                <li><a href="settings.php">Settings</a></li>
-            </ul>
-            <ul class="nav-right">
-                <li><a href="login.php">Login</a></li>
-                <li><a href="register.php">Register</a></li>
-                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
+                <!-- Add other menu items as necessary -->
             </ul>
         </nav>
     </header>
 
-    <!-- Leaderboard Table Section -->
-    <main>
-        <h2>Leaderboard - Top Users</h2>
-        <table id="leaderboard-table">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>User ID</th>
-                    <th>Account Balance</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($leaderboardData as $index => $user): ?>
-                <tr>
-                    <td><?php echo $index + 1; ?></td>
-                    <td><?php echo $user['user_id']; ?></td>
-                    <td><?php echo number_format($user['account_balance'], 2); ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </main>
+    <h2>Leaderboard</h2>
 
-    <!-- Footer with Copyright -->
+    <table id="leaderboard-table">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">User ID <span class="sort-arrow">↑↓</span></th>
+                <th onclick="sortTable(1)">Account Balance <span class="sort-arrow">↑↓</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($leaderboardData as $index => $data): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($data['user_id']); ?></td>
+                    <td><?php echo number_format($data['account_balance'], 2); ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
     <footer>
-        <p>&copy; <?php echo date("Y"); ?> Crypto Express. All Rights Reserved.</p>
+        <p>&copy; 2024 Crypto Express. All rights reserved.</p>
     </footer>
+
+    <script>
+        // Function to sort the table by columns
+        let sortOrder = [true, true]; // Store sorting order for each column
+
+        function sortTable(colIndex) {
+            const table = document.getElementById("leaderboard-table");
+            const rows = Array.from(table.rows).slice(1); // Skip header row
+            const isNumeric = colIndex === 1;
+
+            rows.sort((a, b) => {
+                const aText = a.cells[colIndex].innerText;
+                const bText = b.cells[colIndex].innerText;
+
+                if (isNumeric) {
+                    const aVal = parseFloat(aText.replace(/,/g, ''));
+                    const bVal = parseFloat(bText.replace(/,/g, ''));
+                    return sortOrder[colIndex] ? bVal - aVal : aVal - bVal;
+                } else {
+                    return sortOrder[colIndex] ? aText.localeCompare(bText) : bText.localeCompare(aText);
+                }
+            });
+
+            // Append sorted rows back to the table body
+            rows.forEach(row => table.tBodies[0].appendChild(row));
+            sortOrder[colIndex] = !sortOrder[colIndex]; // Toggle sorting direction
+        }
+    </script>
 </body>
 </html>
+
 
 
