@@ -5,11 +5,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
-from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from datetime import datetime, timezone
 from sqlalchemy import create_engine, Table, Column, String, MetaData, Float, DateTime
+from sqlalchemy.orm import sessionmaker
 import pymysql
 
 # Set up logging
@@ -19,10 +18,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 db_url = 'mysql+pymysql://user:password@localhost/crypto_express'
 engine = create_engine(db_url)
 metadata = MetaData()
+Session = sessionmaker(bind=engine)
 
 # Define a table to store cryptocurrency data
 crypto_table = Table('crypto_data', metadata,
-    Column('name', String(50)),
+    Column('name', String(50), primary_key=True),
     Column('price', Float),
     Column('price_change', Float),
     Column('change_percent', Float),
@@ -37,10 +37,21 @@ crypto_table = Table('crypto_data', metadata,
 )
 metadata.create_all(engine)
 
-def scrape_crypto(driver, symbol):
-    """Scrape cryptocurrency data from Yahoo Finance."""
+# Setup Selenium WebDriver
+def setup_driver():
+    """Setup and configure the WebDriver for scraping."""
+    options = Options()
+    options.headless = True  # Run in headless mode for better performance
+    driver = webdriver.Chrome(service=ChromeService(executable_path='/usr/lib/chromium-browser/chromedriver'), options=options)
+    return driver
+
+# Scrape cryptocurrency data from Yahoo Finance
+def scrape_crypto_data(driver, symbol):
+    """Scrape cryptocurrency data for a given symbol from Yahoo Finance."""
     url = f'https://finance.yahoo.com/quote/{symbol}'
-    logging.info(f"Scraping data for {symbol}...")
+    logging.info(f'Scraping data for {symbol}...')
+    
+    # Initializing dictionary to store scraped data
     crypto_data = {
         'name': symbol,
         'price': None,
@@ -58,105 +69,117 @@ def scrape_crypto(driver, symbol):
 
     try:
         driver.get(url)
-        WebDriverWait(driver, 5).until(
+        # Wait for key elements to be available
+        WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketPrice"]'))
         )
 
         # Scrape price-related data
-        crypto_data['price'] = Decimal(driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketPrice"]').text.replace(',', ''))
-        crypto_data['price_change'] = Decimal(driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketChange"]').text.replace(',', ''))
-        crypto_data['change_percent'] = Decimal(driver.find_element(By.CSS_SELECTOR, 'fin-streamer[data-field="regularMarketChangePercent"]').text.strip('%'))
+        crypto_data['price'] = extract_decimal(driver, 'fin-streamer[data-field="regularMarketPrice"]')
+        crypto_data['price_change'] = extract_decimal(driver, 'fin-streamer[data-field="regularMarketChange"]')
+        crypto_data['change_percent'] = extract_decimal(driver, 'fin-streamer[data-field="regularMarketChangePercent"]', percentage=True)
 
-        # Scrape summary table
-        rows = driver.find_elements(By.CSS_SELECTOR, 'div#quote-summary table tbody tr')
-        for row in rows:
-            header = row.find_element(By.CSS_SELECTOR, 'td:first-child').text.strip()
-            value = row.find_element(By.CSS_SELECTOR, 'td:last-child').text.strip()
+        # Scrape summary table data
+        scrape_summary_table(driver, crypto_data)
+        
+        # Scrape additional details
+        scrape_additional_details(driver, crypto_data)
 
-            if 'Previous Close' in header:
-                crypto_data['previous_close'] = value
-            elif 'Open' in header:
-                crypto_data['open'] = value
-            elif "Day's Range" in header:
-                low, high = value.split(' - ')
-                crypto_data['price_low'] = Decimal(low.strip().replace(',', ''))
-                crypto_data['price_high'] = Decimal(high.strip().replace(',', ''))
-            elif 'Market Cap' in header:
-                crypto_data['market_cap'] = value
-            elif 'Circulating Supply' in header:
-                crypto_data['circulating_supply'] = Decimal(value.replace(',', '').strip())
-            elif 'Volume' in header:
-                crypto_data['volume'] = Decimal(value.replace(',', '').strip())
+    except Exception as e:
+        logging.error(f"Error scraping data for {symbol}: {e}")
 
-    except (TimeoutException, WebDriverException) as e:
-        logging.warning(f"Error fetching data for {symbol}: {e}")
     return crypto_data
 
-# Function to set up a Selenium WebDriver
-def create_driver():
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    service = ChromeService('/usr/bin/chromedriver')  # Update the path to chromedriver
-    driver = webdriver.Chrome(service=service, options=options)
-    return driver
+# Helper function to extract and convert text to Decimal
+def extract_decimal(driver, selector, percentage=False):
+    """Extract numerical data from the webpage and convert to Decimal."""
+    try:
+        text = driver.find_element(By.CSS_SELECTOR, selector).text.replace(',', '')
+        value = Decimal(text.strip('%')) if percentage else Decimal(text)
+        return value
+    except Exception as e:
+        logging.error(f"Error extracting {selector}: {e}")
+        return None
 
-# Function to scrape all cryptocurrencies using threading
-def scrape_all_cryptos(crypto_list):
-    results = []
-    with ThreadPoolExecutor(max_workers=5) as executor:  # Adjust max_workers based on system resources
-        # Create a pool of drivers
-        drivers = [create_driver() for _ in range(5)]
-        futures = []
-        for i, symbol in enumerate(crypto_list):
-            futures.append(executor.submit(scrape_crypto, drivers[i % len(drivers)], symbol))
+# Scrape data from the summary table
+def scrape_summary_table(driver, crypto_data):
+    """Scrape detailed financial data from the summary table."""
+    rows = driver.find_elements(By.CSS_SELECTOR, 'div#quote-summary table tbody tr')
+    for row in rows:
+        columns = row.find_elements(By.TAG_NAME, 'td')
+        if len(columns) >= 2:
+            label = columns[0].text.strip().lower()
+            value = columns[1].text.strip()
 
-        # Collect results
-        for future in futures:
-            results.append(future.result())
+            if 'previous close' in label:
+                crypto_data['previous_close'] = value
+            elif 'open' in label:
+                crypto_data['open'] = value
+            elif 'low' in label:
+                crypto_data['price_low'] = extract_decimal_from_text(value)
+            elif 'high' in label:
+                crypto_data['price_high'] = extract_decimal_from_text(value)
+            elif 'market cap' in label:
+                crypto_data['market_cap'] = value
+            elif 'circulating supply' in label:
+                crypto_data['circulating_supply'] = extract_decimal_from_text(value)
+            elif 'volume' in label:
+                crypto_data['volume'] = extract_decimal_from_text(value)
 
-        # Close all drivers
-        for driver in drivers:
-            driver.quit()
-    return results
+# Helper function to extract decimal values
+def extract_decimal_from_text(text):
+    """Extract numeric value from a string."""
+    try:
+        return Decimal(text.replace(',', '').replace('$', ''))
+    except Exception as e:
+        logging.error(f"Error converting text to Decimal: {e}")
+        return None
 
-# Function to insert scraped data into the database
-def insert_into_db(scraped_data):
-    with engine.connect() as connection:
-        for data in scraped_data:
-            insert_stmt = crypto_table.insert().values(
-                name=data['name'],
-                price=data['price'],
-                price_change=data['price_change'],
-                change_percent=data['change_percent'],
-                previous_close=data['previous_close'],
-                open=data['open'],
-                price_low=data['price_low'],
-                price_high=data['price_high'],
-                market_cap=data['market_cap'],
-                circulating_supply=data['circulating_supply'],
-                volume=data['volume'],
-                trade_time=data['trade_time']
-            )
-            connection.execute(insert_stmt)
+# Scrape additional details like market cap, supply, etc.
+def scrape_additional_details(driver, crypto_data):
+    """Scrape additional details such as market cap and volume."""
+    try:
+        # Placeholder: You can add specific logic to scrape other details
+        pass
+    except Exception as e:
+        logging.error(f"Error scraping additional details: {e}")
 
-if __name__ == '__main__':
-    # List of cryptocurrencies to scrape
-    mycrypto = [
-        'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD', 'BNB-USD'
-    ]
+# Save scraped data into the database
+def save_crypto_data_to_db(crypto_data):
+    """Insert or update cryptocurrency data in the database."""
+    session = Session()
+    try:
+        # Check if the cryptocurrency data already exists
+        existing_data = session.query(crypto_table).filter_by(name=crypto_data['name']).first()
+        if existing_data:
+            # Update existing record
+            for key, value in crypto_data.items():
+                setattr(existing_data, key, value)
+            session.commit()
+            logging.info(f"Updated data for {crypto_data['name']}")
+        else:
+            # Insert new record
+            new_data = crypto_table(**crypto_data)
+            session.add(new_data)
+            session.commit()
+            logging.info(f"Inserted new data for {crypto_data['name']}")
+    except Exception as e:
+        session.rollback()
+        logging.error(f"Error saving data to database: {e}")
+    finally:
+        session.close()
 
-    # Scrape all cryptocurrencies
-    scraped_data = scrape_all_cryptos(mycrypto)
+# Main execution
+def main():
+    driver = setup_driver()
+    symbols = ['BTC-USD', 'ETH-USD', 'LTC-USD']  # Example cryptocurrency symbols
+    for symbol in symbols:
+        crypto_data = scrape_crypto_data(driver, symbol)
+        save_crypto_data_to_db(crypto_data)
+    driver.quit()
 
-    # Insert the scraped data into the database
-    insert_into_db(scraped_data)
-
-    # Output results
-    for data in scraped_data:
-        logging.info(data)
-
+if __name__ == "__main__":
+    main()
 
 
 
