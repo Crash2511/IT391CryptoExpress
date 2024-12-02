@@ -23,6 +23,61 @@ if ($result->num_rows > 0) {
         $cryptoData[] = $row;
     }
 }
+
+// Handle Buy/Sell Actions
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $crypto_id = $_POST['crypto_id'];
+    $transaction_type = $_POST['transaction_type']; // 'buy' or 'sell'
+    $amount = $_POST['amount'];
+
+    // Fetch user's current portfolio for the selected cryptocurrency
+    $sql = "SELECT amount FROM portfolio_information WHERE user_id = ? AND crypto_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $_SESSION['user_id'], $crypto_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user_crypto = $result->fetch_assoc();
+    $stmt->close();
+
+    // Process Buy Action
+    if ($transaction_type == 'buy') {
+        if ($amount > 0) {
+            // Update portfolio to add the bought crypto
+            if ($user_crypto) {
+                // If user already has this crypto, just update the amount
+                $new_amount = $user_crypto['amount'] + $amount;
+                $sql = "UPDATE portfolio_information SET amount = ? WHERE user_id = ? AND crypto_id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("dss", $new_amount, $_SESSION['user_id'], $crypto_id);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                // If user doesn't have this crypto, insert new row
+                $sql = "INSERT INTO portfolio_information (user_id, crypto_id, amount) VALUES (?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("ssd", $_SESSION['user_id'], $crypto_id, $amount);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+    }
+
+    // Process Sell Action
+    if ($transaction_type == 'sell' && $user_crypto) {
+        if ($user_crypto['amount'] >= $amount && $amount > 0) {
+            // Update portfolio to subtract the sold crypto
+            $new_amount = $user_crypto['amount'] - $amount;
+            $sql = "UPDATE portfolio_information SET amount = ? WHERE user_id = ? AND crypto_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("dss", $new_amount, $_SESSION['user_id'], $crypto_id);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            echo "<p class='message'>Insufficient balance to sell.</p>";
+        }
+    }
+}
+
 $conn->close();
 ?>
 
@@ -40,7 +95,6 @@ $conn->close();
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-        }
         }
         th, td {
             border: 1px solid #ddd;
@@ -71,31 +125,25 @@ $conn->close();
             bottom: 0;
             width: 100%;
         }
-
         .crypto-table {
             margin-top: 20px;
             width: 100%;
             text-align: center;
         }
-
         .crypto-table table {
             width: 100%;
             border-collapse: collapse;
         }
-
         .crypto-table th, .crypto-table td {
             border: 1px solid #ddd;
             padding: 10px;
         }
-
         .crypto-table th {
             background-color: #f4f4f4;
         }
-
         .crypto-table td {
             font-size: 1.1rem;
         }
-
     </style>
 </head>
 <body>
@@ -118,26 +166,36 @@ $conn->close();
         </nav>
     </header>
 
-    <!-- Market Overview -->
-    <main class="market-overview">
-        <h2>Cryptocurrency Market Overview</h2>
-        
-        <!-- Table to display cryptocurrency data -->
+    <main>
+        <h2>Market Overview</h2>
         <div class="crypto-table">
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Cryptocurrency</th>
                         <th>Abbreviation</th>
                         <th>Price (USD)</th>
+                        <th>Buy/Sell</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($cryptoData as $crypto): ?>
                     <tr>
-                        <td><?php echo $crypto['name']; ?></td>
-                        <td><?php echo $crypto['name_abreviation']; ?></td>
-                        <td><?php echo '$' . number_format($crypto['price'], 2); ?></td>
+                        <td><?= htmlspecialchars($crypto['name']); ?></td>
+                        <td><?= htmlspecialchars($crypto['name_abreviation']); ?></td>
+                        <td>$<?= number_format($crypto['price'], 2); ?></td>
+                        <td>
+                            <!-- Buy/Sell Form -->
+                            <form action="market.php" method="POST">
+                                <input type="hidden" name="crypto_id" value="<?= htmlspecialchars($crypto['name']); ?>">
+                                <input type="number" name="amount" placeholder="Amount" required>
+                                <select name="transaction_type" required>
+                                    <option value="buy">Buy</option>
+                                    <option value="sell">Sell</option>
+                                </select>
+                                <button type="submit">Submit</button>
+                            </form>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -145,11 +203,9 @@ $conn->close();
         </div>
     </main>
 
-    <!-- Footer -->
     <footer>
-        <p>&copy; 2024 Crypto Express. All Rights Reserved.</p>
+        <p>&copy; 2024 Crypto Express</p>
     </footer>
-
 </body>
 </html>
 
