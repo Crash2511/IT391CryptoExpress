@@ -41,6 +41,7 @@ $conn->close();
             border-collapse: collapse;
             margin: 20px 0;
         }
+        }
         th, td {
             border: 1px solid #ddd;
             padding: 10px;
@@ -49,6 +50,16 @@ $conn->close();
         th {
             background-color: #f4f4f4;
             font-weight: bold;
+        }
+        .message {
+            text-align: center;
+            margin: 20px;
+            font-size: 1.2rem;
+            color: #e74c3c;
+        }
+        .chart-container {
+            width: 80%;
+            margin: 0 auto;
         }
         /* Footer styling */
         footer {
@@ -59,68 +70,6 @@ $conn->close();
             position: fixed;
             bottom: 0;
             width: 100%;
-        }
-
-        /* Navigation bar and header styling */
-        header {
-            background-color: #2c3e50; /* Dark green from portfolio */
-            padding: 20px;
-        }
-
-        header nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header nav h1 a {
-            color: #ecf0f1;
-            text-decoration: none;
-            font-size: 1.75rem; /* Consistent font size */
-        }
-
-        .main-nav {
-            list-style: none;
-            display: flex;
-            margin: 0;
-        }
-
-        .main-nav li {
-            margin-left: 20px;
-        }
-
-        .main-nav a {
-            color: #ecf0f1;
-            text-decoration: none;
-            font-size: 1.2rem;
-        }
-
-        .nav-right {
-            list-style: none;
-            display: flex;
-            margin: 0;
-        }
-
-        .nav-right li {
-            margin-left: 20px;
-        }
-
-        .nav-right a {
-            color: #ecf0f1;
-            text-decoration: none;
-            font-size: 1rem;
-        }
-
-        .market-overview {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: auto;
-        }
-
-        #market-overview h2 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
         }
 
         .crypto-table {
@@ -203,7 +152,6 @@ $conn->close();
 
 </body>
 </html>
-
 
 
 
