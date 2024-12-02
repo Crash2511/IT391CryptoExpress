@@ -140,14 +140,14 @@ $conn->close();
                             <tr>
                                 <td><?= htmlspecialchars($asset['name']) ?> (<?= htmlspecialchars($asset['name_abreviation']) ?>)</td>
                                 <td class="amount"><?= number_format($asset['amount'], 2) ?></td>
-                                <td class="price">$\<?= number_format($asset['price'], 2) ?></td>
-                                <td class="value">$\<?= number_format($assetValue, 2) ?></td>
+                                <td class="price">$<?= number_format($asset['price'], 2) ?></td>
+                                <td class="value">$<?= number_format($assetValue, 2) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
                 <div id="portfolio-summary">
-                    <h3>Total Portfolio Value: <span id="total-value" class="value">$\<?= number_format($totalValue, 2) ?></span></h3>
+                    <h3>Total Portfolio Value: <span id="total-value" class="value">$<?= number_format($totalValue, 2) ?></span></h3>
                 </div>
             <?php endif; ?>
         </section>
@@ -175,7 +175,7 @@ $conn->close();
                                     <?= ucfirst(htmlspecialchars($trade['transaction_type'])) ?>
                                 </td>
                                 <td class="amount"><?= number_format($trade['amount'], 2) ?></td>
-                                <td class="price">$\<?= number_format($trade['price'], 2) ?></td>
+                                <td class="price">$<?= number_format($trade['price'], 2) ?></td>
                                 <td><?= htmlspecialchars($trade['timestamp']) ?></td>
                             </tr>
                         <?php endforeach; ?>
