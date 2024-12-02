@@ -1,3 +1,35 @@
+<?php
+// Enable error reporting
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+// Database connection
+$servername = "localhost";
+$username = "user";
+$password = "Battle2511!";
+$dbname = "crypto_express";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch cryptocurrency data from the crypto_information table
+$sql = "SELECT name, name_abreviation AS symbol, price FROM crypto_information";
+$result = $conn->query($sql);
+
+$crypto_data = [];
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $crypto_data[] = $row;
+    }
+}
+
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,18 +95,18 @@
 <body>
     <header>
         <nav>
-            <h1><a href="index.html">Crypto Express</a></h1>
+            <h1><a href="index.php">Crypto Express</a></h1>
             <ul class="main-nav">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="portfolio.html">Portfolio</a></li>
-                <li><a href="market.html">Market</a></li>
-                <li><a href="leaderboard.html">Leaderboard</a></li>
-                <li><a href="settings.html">Settings</a></li>
+                <li><a href="index.php">Home</a></li>
+                <li><a href="portfolio.php">Portfolio</a></li>
+                <li><a href="market.php">Market</a></li>
+                <li><a href="leaderboard.php">Leaderboard</a></li>
+                <li><a href="settings.php">Settings</a></li>
             </ul>
             <ul class="nav-right">
-                <li><a href="login.html">Login</a></li>
-                <li><a href="register.html">Register</a></li>
-                <li><a href="add-currency.html" class="add-currency-link">Add Currency</a></li>
+                <li><a href="login.php">Login</a></li>
+                <li><a href="register.php">Register</a></li>
+                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
             </ul>
         </nav>
     </header>
@@ -84,27 +116,19 @@
             <h2>Market Overview</h2>
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="Search for a cryptocurrency..." oninput="searchCrypto()">
-                <button id="search-btn" onclick="searchCrypto()">Search</button>
             </div>
             <div id="crypto-list">
-                <!-- JavaScript will populate this -->
+                <!-- PHP will populate this with the crypto data -->
+                <?php foreach ($crypto_data as $crypto) { ?>
+                    <div class="crypto-item" data-symbol="<?php echo $crypto['symbol']; ?>">
+                        <h3><?php echo $crypto['name']; ?> (<?php echo $crypto['symbol']; ?>)</h3>
+                        <p>Price: $<?php echo number_format($crypto['price'], 2); ?></p>
+                        <div class="action-btns">
+                            <button class="favorite-btn" onclick="toggleFavorite('<?php echo $crypto['symbol']; ?>')">Favorite</button>
+                        </div>
+                    </div>
+                <?php } ?>
             </div>
-        </section>
-
-        <section id="actions">
-            <h2>Buy/Sell</h2>
-            <form id="trade-form">
-                <label for="crypto">Select Cryptocurrency:</label>
-                <select id="crypto" name="crypto">
-                    <!-- JavaScript will populate this -->
-                </select>
-
-                <label for="amount">Amount:</label>
-                <input type="number" id="amount" name="amount" min="1">
-
-                <button type="button" id="buy-btn">Buy</button>
-                <button type="button" id="sell-btn">Sell</button>
-            </form>
         </section>
     </main>
 
@@ -113,59 +137,20 @@
     </footer>
 
     <script>
-        // Mock data for top cryptocurrencies
-        const cryptoData = [
-            { name: 'Bitcoin', symbol: 'BTC', price: 34000 },
-            { name: 'Ethereum', symbol: 'ETH', price: 1900 },
-            { name: 'Binance Coin', symbol: 'BNB', price: 540 },
-            { name: 'Ripple', symbol: 'XRP', price: 0.5 },
-            { name: 'Cardano', symbol: 'ADA', price: 0.25 }
-        ];
+        // Retrieve favorites from localStorage
+        const favorites = JSON.parse(localStorage.getItem('favoriteCryptos')) || [];
 
-        // Function to search for a cryptocurrency
-        function searchCrypto() {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const filteredData = cryptoData.filter(crypto =>
-                crypto.name.toLowerCase().includes(searchTerm) || crypto.symbol.toLowerCase().includes(searchTerm)
-            );
-            displaySearchResults(filteredData);
-        }
-
-        // Function to display search results
-        function displaySearchResults(filteredData) {
-            const cryptoListDiv = document.getElementById('crypto-list');
-            cryptoListDiv.innerHTML = ''; // Clear previous results
-
-            if (filteredData.length === 0) {
-                cryptoListDiv.innerHTML = '<p>No cryptocurrencies found.</p>';
-                return;
-            }
-
-            filteredData.forEach(crypto => {
-                const cryptoItem = document.createElement('div');
-                cryptoItem.classList.add('crypto-item');
-                cryptoItem.innerHTML = `
-                    <h3>${crypto.name} (${crypto.symbol})</h3>
-                    <p>Price: $${crypto.price.toFixed(2)}</p>
-                    <div class="crypto-details">
-                        <p>Details: ${crypto.name} is a popular cryptocurrency.</p>
-                    </div>
-                    <div class="action-btns">
-                        <button class="favorite-btn" onclick="toggleFavorite('${crypto.symbol}')">
-                            ${isFavorite(crypto.symbol) ? 'Unfavorite' : 'Favorite'}
-                        </button>
-                        <button class="buy-btn" onclick="buyCrypto('${crypto.symbol}')">Buy</button>
-                        <button class="sell-btn" onclick="sellCrypto('${crypto.symbol}')">Sell</button>
-                    </div>
-                `;
-                cryptoListDiv.appendChild(cryptoItem);
+        // Mark favorite items on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            favorites.forEach(symbol => {
+                const cryptoItem = document.querySelector(`.crypto-item[data-symbol="${symbol}"]`);
+                if (cryptoItem) {
+                    const favoriteButton = cryptoItem.querySelector('.favorite-btn');
+                    favoriteButton.classList.add('active');
+                    favoriteButton.textContent = 'Unfavorite';
+                }
             });
-        }
-
-        // Function to check if a crypto is a favorite
-        function isFavorite(symbol) {
-            return favorites.includes(symbol);
-        }
+        });
 
         // Function to toggle favorite status
         function toggleFavorite(symbol) {
@@ -176,36 +161,41 @@
                 favorites.push(symbol); // Add to favorites
             }
             localStorage.setItem('favoriteCryptos', JSON.stringify(favorites));
+            updateFavoritesUI(symbol);
         }
 
-        // Handle buy action
-        function buyCrypto(symbol) {
-            const amount = document.getElementById('amount').value;
-            if (amount <= 0) {
-                alert('Please enter a valid amount.');
-                return;
+        // Function to update the UI for favorites
+        function updateFavoritesUI(symbol) {
+            const cryptoItem = document.querySelector(`.crypto-item[data-symbol="${symbol}"]`);
+            if (cryptoItem) {
+                const favoriteButton = cryptoItem.querySelector('.favorite-btn');
+                if (favorites.includes(symbol)) {
+                    favoriteButton.classList.add('active');
+                    favoriteButton.textContent = 'Unfavorite';
+                } else {
+                    favoriteButton.classList.remove('active');
+                    favoriteButton.textContent = 'Favorite';
+                }
             }
-            alert(`You bought ${amount} of ${symbol}!`);
         }
 
-        // Handle sell action
-        function sellCrypto(symbol) {
-            const amount = document.getElementById('amount').value;
-            if (amount <= 0) {
-                alert('Please enter a valid amount.');
-                return;
-            }
-            alert(`You sold ${amount} of ${symbol}!`);
+        // Function to filter search results
+        function searchCrypto() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const cryptoItems = document.querySelectorAll('.crypto-item');
+            cryptoItems.forEach(item => {
+                const symbol = item.getAttribute('data-symbol').toLowerCase();
+                const name = item.querySelector('h3').textContent.toLowerCase();
+                if (symbol.includes(searchTerm) || name.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         }
-
-        // Run populateMarket on page load
-        window.onload = function() {
-            displaySearchResults(cryptoData);
-        };
     </script>
 </body>
 </html>
-
 
 
 
