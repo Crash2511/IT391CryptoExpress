@@ -41,8 +41,9 @@ $conn->close();
             padding: 0;
         }
 
+        /* Reverting the home bar color and size */
         header {
-            background-color: #2c3e50;
+            background-color: #27ae60; /* Green color for the header */
             padding: 20px;
         }
 
@@ -53,9 +54,9 @@ $conn->close();
         }
 
         header nav h1 a {
-            color: #ecf0f1;
+            color: #ffffff;
             text-decoration: none;
-            font-size: 1.5rem;
+            font-size: 1.75rem; /* Standardize the font size for consistency */
         }
 
         .main-nav {
@@ -69,9 +70,9 @@ $conn->close();
         }
 
         .main-nav a {
-            color: #ecf0f1;
+            color: #ffffff;
             text-decoration: none;
-            font-size: 1.1rem;
+            font-size: 1.2rem; /* Increase font size for better readability */
         }
 
         .nav-right {
@@ -85,9 +86,9 @@ $conn->close();
         }
 
         .nav-right a {
-            color: #ecf0f1;
+            color: #ffffff;
             text-decoration: none;
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
 
         /* Market Overview */
@@ -121,45 +122,35 @@ $conn->close();
             padding: 10px;
             background-color: #f39c12;
             border: none;
-            border-radius: 4px;
             color: white;
             cursor: pointer;
+            border-radius: 4px;
         }
 
         #search-btn:hover {
             background-color: #e67e22;
         }
 
-        .crypto-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-        }
-
+        /* Crypto Item styling */
         .crypto-item {
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            width: 250px;
-            padding: 20px;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-
-        .crypto-item:hover {
-            transform: scale(1.05);
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .crypto-item h3 {
-            font-size: 1.2rem;
-            color: #2c3e50;
+            color: #27ae60; /* Green for crypto names */
+            font-size: 1.25rem;
+            margin: 0;
         }
 
         .crypto-item p {
-            font-size: 1.1rem;
-            color: #7f8c8d;
-            margin: 10px 0;
+            font-size: 1rem;
+            color: #333;
+            margin: 5px 0;
+            text-align: center;
         }
 
         .favorite-btn {
@@ -167,8 +158,7 @@ $conn->close();
             background-color: #f1c40f;
             border: none;
             cursor: pointer;
-            margin-top: 10px;
-            border-radius: 4px;
+            margin-top: 5px;
         }
 
         .favorite-btn.active {
@@ -177,65 +167,39 @@ $conn->close();
     </style>
 </head>
 <body>
+    <header>
+        <nav>
+            <h1><a href="index.php">Crypto Express</a></h1>
+            <ul class="main-nav">
+                <li><a href="index.php">Home</a></li>
+                <li><a href="portfolio.php">Portfolio</a></li>
+                <li><a href="market.php">Market</a></li>
+                <li><a href="leaderboard.php">Leaderboard</a></li>
+                <li><a href="settings.php">Settings</a></li>
+            </ul>
+            <ul class="nav-right">
+                <li><a href="login.php">Login</a></li>
+                <li><a href="register.php">Register</a></li>
+                <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
+            </ul>
+        </nav>
+    </header>
 
-<header>
-    <nav>
-        <h1><a href="index.php">Crypto Express</a></h1>
-        <ul class="main-nav">
-            <li><a href="index.php">Home</a></li>
-            <li><a href="portfolio.php">Portfolio</a></li>
-            <li><a href="market.php">Market</a></li>
-            <li><a href="leaderboard.php">Leaderboard</a></li>
-            <li><a href="settings.php">Settings</a></li>
-        </ul>
-        <ul class="nav-right">
-            <li><a href="login.php">Login</a></li>
-            <li><a href="register.php">Register</a></li>
-            <li><a href="add-currency.php" class="add-currency-link">Add Currency</a></li>
-        </ul>
-    </nav>
-</header>
-
-<main>
-    <section id="market-overview">
-        <h2>Market Overview</h2>
-
-        <!-- Search Section -->
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
-            <button id="search-btn" onclick="searchCrypto()">Search</button>
-        </div>
-
-        <!-- Crypto List -->
-        <div class="crypto-list">
-            <?php foreach($cryptoData as $crypto): ?>
-                <div class="crypto-item">
-                    <h3><?php echo $crypto['name']; ?> (<?php echo $crypto['name_abreviation']; ?>)</h3>
-                    <p>Price: $<?php echo number_format($crypto['price'], 2); ?></p>
-                    <button class="favorite-btn">Add to Favorites</button>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </section>
-</main>
-
-<script>
-    function searchCrypto() {
-        const input = document.getElementById("search-input").value.toLowerCase();
-        const cryptoItems = document.querySelectorAll(".crypto-item");
-        
-        cryptoItems.forEach(item => {
-            const name = item.querySelector("h3").textContent.toLowerCase();
-            if (name.includes(input)) {
-                item.style.display = "block";
-            } else {
-                item.style.display = "none";
-            }
-        });
-    }
-</script>
+    <main>
+        <section id="market-overview">
+            <h2>Market Overview</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search for a cryptocurrency...">
+                <button id="search-btn" onclick="searchCrypto()">Search</button>
+            </div>
+            <div id="crypto-list">
+                <!-- Cryptocurrency data will be injected here dynamically -->
+            </div>
+        </section>
+    </main>
 
 </body>
 </html>
+
 
 
