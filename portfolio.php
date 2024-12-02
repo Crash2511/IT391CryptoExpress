@@ -1,8 +1,12 @@
 <?php
+// Enable error reporting
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 // Database connection
 $servername = "localhost";
 $username = "root";
-$password = "your_password";
+$password = "your_password";  // Replace with your password
 $dbname = "crypto_express";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -13,13 +17,13 @@ if ($conn->connect_error) {
 }
 
 // Fetch portfolio data
-$sql = "SELECT * FROM portfolio_data";  // Change to your actual portfolio table
+$sql = "SELECT * FROM portfolio_data";  // Adjust to your portfolio table
 $result = $conn->query($sql);
 
 $portfolio_data = [];
 if ($result->num_rows > 0) {
     // Fetch each row and add to the portfolio_data array
-    while($row = $result->fetch_assoc()) {
+    while ($row = $result->fetch_assoc()) {
         $portfolio_data[] = [
             'asset' => $row['asset'],
             'amount' => $row['amount'],
@@ -27,7 +31,7 @@ if ($result->num_rows > 0) {
         ];
     }
 } else {
-    echo "0 results";
+    echo "0 results";  // This will display if no data is returned from the database
 }
 
 $conn->close();
@@ -75,18 +79,22 @@ $conn->close();
                 </thead>
                 <tbody id="portfolio-list">
                     <?php
-                    // Generate portfolio table rows dynamically
-                    foreach ($portfolio_data as $portfolio_item) {
-                        $asset = $portfolio_item['asset'];
-                        $amount = $portfolio_item['amount'];
-                        $price = $portfolio_item['price']; // Assuming this is fetched from your table
-                        $value = $amount * $price; // Calculate total value
-                        echo "<tr>
-                                <td>{$asset}</td>
-                                <td class='amount'>{$amount}</td>
-                                <td class='price'>{$price}</td>
-                                <td class='value'>{$value}</td>
-                              </tr>";
+                    // Check if portfolio_data is populated and create table rows dynamically
+                    if (count($portfolio_data) > 0) {
+                        foreach ($portfolio_data as $portfolio_item) {
+                            $asset = $portfolio_item['asset'];
+                            $amount = $portfolio_item['amount'];
+                            $price = $portfolio_item['price'];
+                            $value = $amount * $price; // Calculate the portfolio value
+                            echo "<tr>
+                                    <td>{$asset}</td>
+                                    <td class='amount'>{$amount}</td>
+                                    <td class='price'>{$price}</td>
+                                    <td class='value'>{$value}</td>
+                                  </tr>";
+                        }
+                    } else {
+                        echo "<tr><td colspan='4'>No portfolio data available.</td></tr>";
                     }
                     ?>
                 </tbody>
@@ -109,15 +117,13 @@ $conn->close();
                     </tr>
                 </thead>
                 <tbody id="trades-list">
-                    <!-- JavaScript will populate this with trades -->
+                    <!-- JavaScript will populate this -->
                 </tbody>
             </table>
         </section>
 
         <section id="portfolio-graph">
             <h2>Your Portfolio Performance</h2>
-
-            <!-- Dropdown to select cryptocurrency -->
             <label for="crypto-filter">Select Cryptocurrency:</label>
             <select id="crypto-filter" onchange="updateCryptoChart()">
                 <option value="all">All</option>
@@ -126,13 +132,10 @@ $conn->close();
                 <option value="ADA">Cardano (ADA)</option>
             </select>
 
-            <!-- Time range buttons -->
             <div class="time-range-buttons">
                 <button onclick="updateChart('1d')">1D</button>
                 <button onclick="updateChart('1w')">1W</button>
                 <button onclick="updateChart('1m')">1M</button>
-                <button onclick="updateChart('3m')">3M</button>
-                <button onclick="updateChart('1y')">1Y</button>
             </div>
 
             <canvas id="portfolioChart"></canvas>
@@ -140,71 +143,50 @@ $conn->close();
     </main>
 
     <script>
+        // Initialize the portfolio chart
         const ctx = document.getElementById('portfolioChart').getContext('2d');
-        let portfolioChart;
-
-        // Placeholder function to simulate getting historical data
-        function fetchCryptoData(crypto, timeRange) {
-            // This can be replaced with an actual API call to fetch historical data for the selected crypto and time range.
-            const data = {
-                labels: ["2021-01", "2021-02", "2021-03", "2021-04", "2021-05"], // Example time labels
+        const portfolioChart = new Chart(ctx, {
+            type: 'line',  // Choose chart type (line, bar, etc.)
+            data: {
+                labels: [],  // Time labels (e.g., days, weeks)
                 datasets: [{
-                    label: crypto + ' Price',
-                    data: [100, 120, 140, 130, 160], // Example price data (replace with actual data)
+                    label: 'Portfolio Value',
+                    data: [],  // Portfolio value data
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    tension: 0.1
+                    borderWidth: 1
                 }]
-            };
-            return data;
-        }
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
 
-        // Update chart based on selected cryptocurrency
+        // Function to update the chart based on selected cryptocurrency
         function updateCryptoChart() {
-            const selectedCrypto = document.getElementById('crypto-filter').value;
-            const timeRange = '1w'; // Default to 1 week, could be dynamic based on user selection
-
-            const data = fetchCryptoData(selectedCrypto, timeRange);
-            
-            if (portfolioChart) {
-                portfolioChart.destroy();
+            const cryptoFilter = document.getElementById('crypto-filter').value;
+            const chartData = { /* Sample data or fetch data based on filter */ };
+            if (cryptoFilter === "all") {
+                // You can fetch data for all assets or display aggregated data
+            } else {
+                // Fetch and update data for specific cryptocurrency
             }
-
-            portfolioChart = new Chart(ctx, {
-                type: 'line',
-                data: data,
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
-                    }
-                });
         }
 
-        // Update chart based on time range
-        function updateChart(timeRange) {
-            const selectedCrypto = document.getElementById('crypto-filter').value;
-            const data = fetchCryptoData(selectedCrypto, timeRange);
+        // Function to update the chart with specific time range (1d, 1w, 1m)
+        function updateChart(range) {
+            const data = {
+                '1d': [100, 150, 120, 180, 200],  // Sample data for 1-day range
+                '1w': [150, 120, 180, 200, 170],  // Sample data for 1-week range
+                '1m': [120, 180, 200, 170, 180]   // Sample data for 1-month range
+            };
 
-            if (portfolioChart) {
-                portfolioChart.destroy();
-            }
-
-            portfolioChart = new Chart(ctx, {
-                type: 'line',
-                data: data,
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
-                    }
-                });
-        }
-
-        // Initial chart render with default values
-        window.onload = function() {
-            updateCryptoChart();
+            portfolioChart.data.labels = ['10 AM', '11 AM', '12 PM', '1 PM', '2 PM'];  // Sample labels
+            portfolioChart.data.datasets[0].data = data[range];
+            portfolioChart.update();
         }
     </script>
 </body>
