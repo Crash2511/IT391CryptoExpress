@@ -63,18 +63,32 @@ $conn->close();
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f7f9fb;
+            background-color: #f4f7f6;
             margin: 0;
             padding: 0;
         }
 
+        /* Dark Blue Banner */
+        header {
+            background-color: #2c3e50;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: #ecf0f1;
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        /* Main Login Container */
         .login-container {
             max-width: 400px;
             margin: 50px auto;
             padding: 40px;
-            background-color: #ffffff;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
             border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .login-container h2 {
@@ -90,7 +104,6 @@ $conn->close();
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
-            box-sizing: border-box;
             font-size: 16px;
         }
 
@@ -99,38 +112,56 @@ $conn->close();
             outline: none;
         }
 
-        /* Button styling */
+        /* Submit button styling */
         .login-container input[type="submit"] {
             width: 100%;
             padding: 12px;
             background-color: #3498db;
-            color: white;
             border: none;
             border-radius: 5px;
+            color: #fff;
+            font-size: 1.2rem;
             cursor: pointer;
-            font-size: 16px;
         }
 
         .login-container input[type="submit"]:hover {
             background-color: #2980b9;
         }
 
-        /* Error message styling */
+        /* Forgot password link */
+        .forgot-password {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
         .error-message {
             color: red;
+            font-size: 1rem;
             text-align: center;
             margin-bottom: 20px;
-            font-size: 14px;
         }
+
     </style>
 </head>
 <body>
 
+<header>
+    <h1>Crypto Express</h1>
+</header>
+
 <div class="login-container">
     <h2>Login</h2>
 
+    <!-- Display error message if there is one -->
     <?php if (isset($error_message)): ?>
-        <div class="error-message"><?php echo $error_message; ?></div>
+        <div class="error-message"><?= $error_message ?></div>
     <?php endif; ?>
 
     <form method="POST" action="">
@@ -138,9 +169,11 @@ $conn->close();
         <input type="password" name="password" placeholder="Password" required>
         <input type="submit" value="Login">
     </form>
+
+    <!-- Forgot password link -->
+    <a href="forgot_password.php" class="forgot-password">Forgot your password?</a>
 </div>
 
 </body>
 </html>
-
 
