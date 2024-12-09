@@ -21,7 +21,7 @@ if ($conn->connect_error) {
     <title>Crypto Simulator</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        <?php include 'styles.css'; // Include your existing CSS ?>
+        <?php include 'styles.css'; ?>
         .summary-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -79,7 +79,6 @@ if ($conn->connect_error) {
     </header>
 
     <main>
-        <!-- Summary Section -->
         <section class="summary-container">
             <div class="summary-item">
                 <h3>Total Coins</h3>
@@ -99,7 +98,6 @@ if ($conn->connect_error) {
             </div>
         </section>
 
-        <!-- Market Overview Section -->
         <section id="market-overview">
             <h2>Market Overview</h2>
             <table class="stock-chart">
