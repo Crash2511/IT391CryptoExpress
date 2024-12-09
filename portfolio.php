@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 // Database connection
 $servername = "localhost";
 $username = "user"; 
-$password = "Battle2511!";  // Replace with your password 
+$password = "Battle2511!"; 
 $dbname = "crypto_express";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -16,7 +16,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch portfolio data by joining portfolio_information and crypto_information tables
+// Fetch portfolio data by joining portfolio_innfo and crypto info tables
 $sql = "SELECT ci.name, ci.price, pi.amount
         FROM portfolio_information pi
         JOIN crypto_information ci ON pi.crypto_id = ci.name
@@ -208,9 +208,9 @@ $conn->close();
             const cryptoFilter = document.getElementById('crypto-filter').value;
             const chartData = { /* Sample data or fetch data based on filter */ };
             if (cryptoFilter === "all") {
-                // You can fetch data for all assets or display aggregated data
+              
             } else {
-                // Fetch and update data for specific cryptocurrency
+                
             }
         }
 
