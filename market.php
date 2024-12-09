@@ -16,7 +16,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch cryptocurrency data from the crypto_information table
+// Fetch cryptocurrency data from the crypto info table
 $sql = "SELECT name, name_abreviation AS symbol, price FROM crypto_information";
 $result = $conn->query($sql);
 
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $transaction_type = $_POST['transaction_type']; // 'buy' or 'sell'
     $user_id = "example_user"; // Replace with actual user ID (from session or authentication)
 
-    // Fetch the current price of the selected cryptocurrency
+    // Fetch the current price of the selected crypto
     $stmt = $conn->prepare("SELECT price FROM crypto_information WHERE name_abreviation = ?");
     $stmt->bind_param("s", $crypto_id);
     $stmt->execute();
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Calculate the total transaction value
     $total_value = $price * $amount;
 
-    // Handle the transaction (buy or sell)
+    // Handle the transaction
     if ($transaction_type === 'buy') {
         // Deduct total value from the user's account balance and add the crypto to their portfolio
         $conn->begin_transaction();
@@ -181,7 +181,6 @@ $conn->close();
         <section id="market-overview">
             <h2>Market Overview</h2>
             <div id="crypto-list">
-                <!-- PHP will populate the cryptocurrency list -->
                 <?php foreach ($crypto_data as $crypto) { ?>
                     <div class="crypto-item">
                         <h3><?php echo $crypto['name']; ?> (<?php echo $crypto['symbol']; ?>)</h3>
