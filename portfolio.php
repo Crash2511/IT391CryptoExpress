@@ -3,11 +3,11 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Database connection
+// Database connection settings
 $servername = "localhost";
-$username = "user"; 
-$password = "Battle2511!"; 
-$dbname = "crypto_express";
+$username = "user";
+$password = ""; // your password here
+$dbname = "crypto_express"; // Edit db if necessary here
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
