@@ -1,6 +1,10 @@
 <?php
 session_start();
-
+// Database connection settings
+$servername = "localhost";
+$username = "user";
+$password = ""; // your password here
+$dbname = "crypto_express"; // Edit db if necessary here
 // Redirect to index page after a few seconds
 header("refresh:5;url=index.php");
 ?>
