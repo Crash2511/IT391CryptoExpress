@@ -1,11 +1,11 @@
 <?php
 session_start();
 
-// Database connection
+// Database connection settings
 $servername = "localhost";
 $username = "user";
-$password = "Battle2511!";
-$dbname = "crypto_express";
+$password = ""; // your password here
+$dbname = "crypto_express"; // Edit db if necessary here
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
