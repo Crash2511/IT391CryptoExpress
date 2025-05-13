@@ -1,0 +1,67 @@
+-- Updated SQL script for the database to include new user settings fields
+
+-- crypto_information table, for storing everything about the coins.
+CREATE TABLE `crypto_information` (
+  `name` varchar(50) NOT NULL,
+  `name_abreviation` varchar(10) NOT NULL,
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `price_change` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `change_percent` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `market_cap` varchar(20) NOT NULL DEFAULT '0',
+  `volume` decimal(20,2) NOT NULL DEFAULT '0.00',
+  `circulating_supply` decimal(20,2) NOT NULL DEFAULT '0.00',
+  `total_supply` decimal(20,2) NOT NULL DEFAULT '0.00',
+  `price_high` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `price_low` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `trade_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- user_information table, for storing information about the user and settings.
+CREATE TABLE `user_information` (
+  `first_name` varchar(15) DEFAULT NULL,
+  `last_name` varchar(15) DEFAULT NULL,
+  `email` varchar(50) DEFAULT NULL,
+  `user_id` varchar(20) NOT NULL,
+  `user_password` varchar(100) DEFAULT NULL,
+  `account_balance` decimal(15,2) DEFAULT NULL,
+  `alias` varchar(50) DEFAULT NULL,
+  `preferred_currency` varchar(10) DEFAULT 'USD',
+  `notifications` BOOLEAN DEFAULT 0,
+  `language` varchar(5) DEFAULT 'en',
+  `theme` ENUM('light', 'dark') DEFAULT 'light',
+  `leaderboard` BOOLEAN DEFAULT 0,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `user_information_chk_1` CHECK (((char_length(`user_id`) <= 20) and regexp_like(`user_id`,_utf8mb4'^[a-zA-Z0-9]*$')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- transaction_history table, for keeping track of all transactions and their status.
+CREATE TABLE `transaction_history` (
+  `transaction_id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(20) NOT NULL,
+  `transaction_type` varchar(20) NOT NULL,
+  `trading_pair` varchar(20) DEFAULT NULL,
+  `amount` decimal(20,8) NOT NULL,
+  `price` decimal(20,8) DEFAULT NULL,
+  `total_value` decimal(20,8) DEFAULT NULL,
+  `fee` decimal(20,8) DEFAULT '0.00000000',
+  `status` enum('pending','successful','cancelled') DEFAULT 'pending',
+  `timestamp` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `reference_id` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`transaction_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `transaction_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_information` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- portfolio_information table, for tracking user-owned cryptocurrencies.
+CREATE TABLE `portfolio_information` (
+  `portfolio_id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(20) NOT NULL,
+  `crypto_id` varchar(50) NOT NULL,
+  `amount` decimal(20,8) NOT NULL DEFAULT '0.00000000',
+  PRIMARY KEY (`portfolio_id`),
+  KEY `user_id` (`user_id`),
+  KEY `crypto_id` (`crypto_id`),
+  CONSTRAINT `portfolio_information_user_fk` FOREIGN KEY (`user_id`) REFERENCES `user_information` (`user_id`),
+  CONSTRAINT `portfolio_information_crypto_fk` FOREIGN KEY (`crypto_id`) REFERENCES `crypto_information` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

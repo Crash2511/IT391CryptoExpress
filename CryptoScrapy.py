@@ -59,7 +59,7 @@ def insert_data_into_database(engine, data):
         session.close()
 
 if __name__ == '__main__':
-    db_url = '' #insert our database link
+    db_url = '' #insert your database link
 
     engine = connect_to_database(db_url)
     if engine is None:
